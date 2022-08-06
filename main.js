@@ -1,5 +1,5 @@
 // Modules to control application life and create native browser window
-const {app, BrowserWindow} = require('electron')
+const {app, BrowserWindow, ipcMain, dialog} = require('electron')
 const path = require('path')
 
 function createWindow () {
@@ -44,7 +44,6 @@ app.on('window-all-closed', function () {
 })
 
 // Show open file dialog, only allowing sound files
-const { ipcMain, dialog } = require("electron");
 ipcMain.handle("showDialog", (e) => {
     return dialog.showOpenDialog(
         {
@@ -54,6 +53,11 @@ ipcMain.handle("showDialog", (e) => {
             ]
         } 
     );
+});
+
+// Show open file dialog, only allowing sound files
+ipcMain.handle("getConfigPath", (e) => {
+  return app.getPath("appData");
 });
   
 // In this file you can include the rest of your app's specific main process

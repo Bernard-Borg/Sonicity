@@ -33,7 +33,7 @@
         {
           "name": "@electron-forge/maker-squirrel",
           "config": {
-            "name": "soundboard-app"
+            "name": "soundboard_app"
           }
         },
         {

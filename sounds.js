@@ -1,7 +1,19 @@
 const { ipcRenderer } = require('electron');
 const { v4: uuidv4 } = require('uuid')
 const fs = require('fs');
-const { eventNames } = require('process');
+
+const path = await ipcRenderer.invoke("getConfigPath") + "\\soundboard-app\\config.json";
+console.log(path);
+
+let initialConfig = {
+    "sounds": [],
+    "darkmode": true,
+    "sequential": false
+}
+
+if (!fs.existsSync(path)) {
+    fs.writeFileSync(path, JSON.stringify(initialConfig, null, 4));
+}
 
 // View mode can either be false - soundboard mode (to use the soundboard) or true - delete mode (to delete soundboard items)
 let deleteModeState = false;
@@ -28,9 +40,9 @@ let timeoutTemp = undefined;
 let settingKeybind = false;
 
 //Plays a sound with the specified path
-function playSound(path) {
+function playSound(soundPath) {
     if (sequentialModeState) {
-        let audio = new Audio(path);
+        let audio = new Audio(soundPath);
         currentAudio.forEach(sound => {
             sound.pause();
             sound.currentTime = 0;
@@ -38,7 +50,7 @@ function playSound(path) {
         currentAudio = [ audio ];
         audio.play();
     } else {
-        let audio = new Audio(path);
+        let audio = new Audio(soundPath);
         audio.play();
 
         audio.onended = function() {
@@ -123,15 +135,18 @@ function checkKeybind(event) {
 
 // Displays an open file dialog and adds a new sound config
 function addNewSound(functionToLoadPage) {
+    console.log("Hello");
     ipcRenderer.invoke("showDialog").then((result) => {
         let uuid = uuidv4();
-        let path = result.filePaths[0];
+        let soundPath = result.filePaths[0];
 
-        if (path !== undefined) {
-            let config = JSON.parse(fs.readFileSync('./sounds-config.json'));
-            config.sounds.push({ uuid: uuid, path: path });
+        if (soundPath !== undefined) {
+            console.log("Hello");
+            let config = JSON.parse(fs.readFileSync(path));
+            console.log(config);
+            config.sounds.push({ uuid: uuid, path: soundPath });
     
-            fs.writeFileSync("./sounds-config.json", JSON.stringify(config, null, 4));
+            fs.writeFileSync(path, JSON.stringify(config, null, 4));
         }
     }).then(() => {
         functionToLoadPage();
@@ -140,13 +155,13 @@ function addNewSound(functionToLoadPage) {
 
 // Deletes a sound from the config
 function deleteSound(uuid) {
-    let config = JSON.parse(fs.readFileSync('./sounds-config.json'));
+    let config = JSON.parse(fs.readFileSync(path));
 
     let indexOfItemToDelete = config.sounds.findIndex(x => x.uuid == uuid);
     config.sounds.splice(indexOfItemToDelete, 1);
 
     if (uuid !== undefined) {
-        fs.writeFileSync("./sounds-config.json", JSON.stringify(config, null, 4));
+        fs.writeFileSync(path, JSON.stringify(config, null, 4));
     }
 }
 
@@ -180,10 +195,10 @@ function changeTheme() {
 
     darkModeState = !darkModeState;
 
-    let themeConfig = JSON.parse(fs.readFileSync('./app-config.json'));
+    let themeConfig = JSON.parse(fs.readFileSync(path));
     themeConfig.darkmode = darkModeState;
 
-    fs.writeFileSync("./app-config.json", JSON.stringify(themeConfig, null, 4));
+    fs.writeFileSync(path, JSON.stringify(themeConfig, null, 4));
 }
 
 function changePlayMode() {
@@ -197,14 +212,14 @@ function changePlayMode() {
 
     sequentialModeState = !sequentialModeState;
 
-    let themeConfig = JSON.parse(fs.readFileSync('./app-config.json'));
+    let themeConfig = JSON.parse(fs.readFileSync(path));
     themeConfig.sequential = sequentialModeState;
 
-    fs.writeFileSync("./app-config.json", JSON.stringify(themeConfig, null, 4));
+    fs.writeFileSync(path, JSON.stringify(themeConfig, null, 4));
 }
 
 function loadAppConfig() {
-    let config = JSON.parse(fs.readFileSync('./app-config.json'));
+    let config = JSON.parse(fs.readFileSync(path));
 
     darkModeState = config.darkmode;
     document.documentElement.classList.add(darkModeState ? "dark-theme" : "light-theme");
@@ -269,7 +284,7 @@ async function addKeybind(uuid) {
         await new Promise(resolve => setTimeout(resolve, 50));
     }
 
-    let config = JSON.parse(fs.readFileSync('./sounds-config.json'));
+    let config = JSON.parse(fs.readFileSync(path));
 
     if (uuid !== undefined) {
         let newKeybind = getKeybindTextForFile(tempKeybindStore);
@@ -280,7 +295,7 @@ async function addKeybind(uuid) {
         } else {
             let indexOfItemToChange = config.sounds.findIndex(x => x.uuid == uuid);
             config.sounds[indexOfItemToChange].keybind = newKeybind;
-            fs.writeFileSync("./sounds-config.json", JSON.stringify(config, null, 4));
+            fs.writeFileSync(path, JSON.stringify(config, null, 4));
         }
     }
 
@@ -295,7 +310,7 @@ function loadPage() {
     loadAppConfig();
 
     // Load the sound configuration data
-    const sounds_config = JSON.parse(fs.readFileSync('./sounds-config.json'));
+    const sounds_config = JSON.parse(fs.readFileSync(path));
 
     // Store the sound data in a variable
     let sounds = sounds_config.sounds
@@ -303,8 +318,8 @@ function loadPage() {
     // Get a list of keybinds currently set to a sound effect
     registeredKeybinds = sounds.filter(x => x.keybind !== undefined && x.keybind !== null);
 
-    const createSoundboardButton = (uuid, path, keybind) => {
-        if (uuid !== undefined && path !== undefined) {
+    const createSoundboardButton = (uuid, soundPath, keybind) => {
+        if (uuid !== undefined && soundPath !== undefined) {
             let container = document.createElement("div");
             container.setAttribute("class", "button-container");
 
@@ -312,11 +327,11 @@ function loadPage() {
             buttonElement.setAttribute("id", uuid);
             buttonElement.setAttribute("class", "sound-button");
             
-            let filename = path.replace(/^.*[\\\/]/, '')
+            let filename = soundPath.replace(/^.*[\\\/]/, '')
             buttonElement.innerText = filename;
 
             buttonElement.addEventListener("click", () => {
-                playSound(path);
+                playSound(soundPath);
             });
 
             let textElement = document.createElement("span");
@@ -343,18 +358,18 @@ function loadPage() {
 
             return container;
         } else {
-            console.debug(`Attempted to create soundboard button with UUID ${uuid ?? 'empty'} and Path ${path ?? 'empty'}`)
+            console.debug(`Attempted to create soundboard button with UUID ${uuid ?? 'empty'} and Path ${soundPath ?? 'empty'}`)
             return;
         }
     }
 
-    const createDeleteButton = (uuid, path, keybind) => {
-        if (uuid !== undefined && path !== undefined) {
+    const createDeleteButton = (uuid, soundPath, keybind) => {
+        if (uuid !== undefined && soundPath !== undefined) {
             let element = document.createElement("button");
             element.setAttribute("id", uuid);
             element.setAttribute("class", "sound-button sound-button-delete")
 
-            let filename = path.replace(/^.*[\\\/]/, '')
+            let filename = soundPath.replace(/^.*[\\\/]/, '')
             element.innerText = filename;
 
             element.addEventListener("click", () => {
@@ -364,7 +379,7 @@ function loadPage() {
 
             return element;
         } else {
-            console.debug(`Attempted to create delete button with UUID ${uuid ?? 'empty'} and Path ${path ?? 'empty'}`)
+            console.debug(`Attempted to create delete button with UUID ${uuid ?? 'empty'} and Path ${soundPath ?? 'empty'}`)
             return;
         }
     }
