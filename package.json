@@ -1,56 +1,35 @@
 {
   "name": "soundboard-app",
-  "version": "1.0.0",
-  "description": "A soundboard app similar to Voicemod, but free!",
-  "main": "main.js",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
   "scripts": {
-    "start": "electron-forge start",
-    "package": "electron-forge package",
-    "make": "electron-forge make"
-  },
-  "repository": "https://github.com/Bernard-Borg/SoundboardApp",
-  "keywords": [
-    "soundboard"
-  ],
-  "author": "GitHub",
-  "license": "CC0-1.0",
-  "devDependencies": {
-    "@electron-forge/cli": "^6.0.0-beta.65",
-    "@electron-forge/maker-deb": "^6.0.0-beta.65",
-    "@electron-forge/maker-rpm": "^6.0.0-beta.65",
-    "@electron-forge/maker-squirrel": "^6.0.0-beta.65",
-    "@electron-forge/maker-zip": "^6.0.0-beta.65",
-    "electron": "^19.0.9"
+    "dev": "vite --open",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "tauri": "tauri"
   },
   "dependencies": {
-    "electron-squirrel-startup": "^1.0.0",
-    "uuid": "^8.3.2"
+    "@tauri-apps/api": "^1.2.0",
+    "sass": "^1.58.3",
+    "svelte-inline-svg": "^1.2.0",
+    "uuid": "^9.0.0"
   },
-  "config": {
-    "forge": {
-      "packagerConfig": {},
-      "makers": [
-        {
-          "name": "@electron-forge/maker-squirrel",
-          "config": {
-            "name": "soundboard_app"
-          }
-        },
-        {
-          "name": "@electron-forge/maker-zip",
-          "platforms": [
-            "darwin"
-          ]
-        },
-        {
-          "name": "@electron-forge/maker-deb",
-          "config": {}
-        },
-        {
-          "name": "@electron-forge/maker-rpm",
-          "config": {}
-        }
-      ]
-    }
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^2.0.0",
+    "@tauri-apps/cli": "^1.2.2",
+    "@tsconfig/svelte": "^3.0.0",
+    "@types/node": "^18.7.10",
+    "autoprefixer": "^10.4.13",
+    "postcss": "^8.4.21",
+    "prettier": "2.8.4",
+    "svelte": "^3.54.0",
+    "svelte-check": "^3.0.0",
+    "svelte-preprocess": "^5.0.0",
+    "tailwindcss": "^3.2.7",
+    "tslib": "^2.4.1",
+    "typescript": "^4.6.4",
+    "vite": "^4.0.0"
   }
 }
