@@ -1,6 +1,7 @@
 <script lang="ts">
     import { open } from "@tauri-apps/api/dialog";
     import { exists, writeTextFile, readTextFile, BaseDirectory, createDir } from "@tauri-apps/api/fs";
+    import { convertFileSrc } from "@tauri-apps/api/tauri";
     import { onMount } from "svelte";
     import { v4 as uuidv4 } from "uuid";
     import InlineSVG from "svelte-inline-svg";
@@ -16,9 +17,6 @@
         sequential: boolean;
         sounds: Array<Sound>;
     };
-
-    // View mode can either be false - soundboard mode (to use the soundboard) or true - delete mode (to delete soundboard items)
-    let deleteMode = false;
 
     // List of currently playing audio for chaos mode
     let currentAudio = [];
@@ -38,9 +36,10 @@
     let configuration: SoundboardConfiguration = {
         sounds: [],
         darkmode: true,
-        sequential: false
+        sequential: true
     };
 
+    // Loads configuration from file
     const loadConfiguration = async () => {
         if (!(await exists("soundboard-app-tauri\\soundboard-app-config.json", { dir: BaseDirectory.AppData }))) {
             await createDir("soundboard-app-tauri", { dir: BaseDirectory.AppData, recursive: true });
@@ -64,6 +63,58 @@
         writeTextFile("soundboard-app-tauri\\soundboard-app-config.json", JSON.stringify(configuration, null, 4), {
             dir: BaseDirectory.AppData
         });
+    };
+
+    // Theme management
+    const changeTheme = async () => {
+        let documentElement = document.documentElement;
+
+        if (configuration.darkmode) {
+            documentElement.classList.remove("dark-theme");
+            documentElement.classList.add("light-theme");
+        } else {
+            documentElement.classList.remove("light-theme");
+            documentElement.classList.add("dark-theme");
+        }
+
+        configuration.darkmode = !configuration.darkmode;
+        saveConfiguration();
+    };
+
+    // Displays an open file dialog and adds a new sound config
+    const addNewSound = () => {
+        open({
+            multiple: false,
+            filters: [{ name: "Audio Files", extensions: ["wav", "ogg", "mp3"] }]
+        }).then((result) => {
+            let uuid = uuidv4();
+            let soundPath = "";
+
+            if (Array.isArray(result)) {
+                soundPath = result[0];
+            } else {
+                soundPath = result;
+            }
+
+            if (soundPath !== undefined) {
+                configuration.sounds.push({ uuid: uuid, path: soundPath });
+                configuration = configuration;
+
+                saveConfiguration();
+            }
+        });
+    };
+
+    // Deletes a sound from the config
+    const deleteSound = async (uuid) => {
+        let indexOfItemToDelete = configuration.sounds.findIndex((x) => x.uuid == uuid);
+
+        if (indexOfItemToDelete > -1) {
+            configuration.sounds.splice(indexOfItemToDelete, 1);
+            configuration = configuration;
+
+            saveConfiguration();
+        }
     };
 
     // Splits the keybind parts to get a string representation of keybind parts (Ctrl~~A -> [Ctrl, A])
@@ -137,72 +188,10 @@
         }
     }
 
-    // Displays an open file dialog and adds a new sound config
-    function addNewSound() {
-        open({
-            multiple: false,
-            filters: [{ name: "Audio Files", extensions: ["wav", "ogg", "mp3"] }]
-        }).then((result) => {
-            let uuid = uuidv4();
-            let soundPath = result[0];
-
-            if (soundPath !== undefined) {
-                configuration.sounds.push({ uuid: uuid, path: soundPath });
-                configuration = configuration;
-
-                saveConfiguration();
-            }
-        });
-    }
-
-    // Deletes a sound from the config
-    async function deleteSound(uuid) {
-        let indexOfItemToDelete = configuration.sounds.findIndex((x) => x.uuid == uuid);
-
-        if (indexOfItemToDelete > -1) {
-            configuration.sounds.splice(indexOfItemToDelete, 1);
-            configuration = configuration;
-
-            saveConfiguration();
-        }
-    }
-
-    // Switches between soundboard and delete modes
-    function changeViewMode() {
-        deleteMode = !deleteMode;
-    }
-
-    async function changeTheme() {
-        let documentElement = document.documentElement;
-
-        if (configuration.darkmode) {
-            documentElement.classList.remove("dark-theme");
-            documentElement.classList.add("light-theme");
-        } else {
-            documentElement.classList.remove("light-theme");
-            documentElement.classList.add("dark-theme");
-        }
-
-        configuration.darkmode = !configuration.darkmode;
-        saveConfiguration();
-    }
-
-    async function changePlayMode() {
-        if (configuration.sequential) {
-            document.getElementById("play-mode-sequential").style.display = "none";
-            document.getElementById("play-mode-chaos").style.display = "block";
-        } else {
-            document.getElementById("play-mode-sequential").style.display = "block";
-            document.getElementById("play-mode-chaos").style.display = "none";
-        }
-
-        configuration.sequential = !configuration.sequential;
-
-        saveConfiguration();
-    }
-
     //Plays a sound with the specified path
     function playSound(soundPath: string) {
+        soundPath = convertFileSrc(soundPath);
+
         if (configuration.sequential) {
             let audio = new Audio(soundPath);
             currentAudio.forEach((sound) => {
@@ -320,18 +309,10 @@
     }}
 />
 
-<main class="w-full h-screen bg-zinc-700 dark:bg-dark flex flex-col">
+<main class="w-full h-screen bg-blue-100 dark:bg-dark flex flex-col">
     <div class="h-[100px] flex justify-between p-8 items-center">
         <h1 class="text-dark dark:text-white text-3xl font-bold">Sound Effects</h1>
         <div class="flex items-center gap-x-3">
-            <button
-                class="keyboard-button"
-                on:click={() => {
-                    changePlayMode();
-                }}
-            >
-                Play Mode
-            </button>
             <button
                 class="keyboard-button flex justify-center items-center"
                 on:click={() => {
@@ -344,65 +325,52 @@
                     <InlineSVG src="moon.svg" />
                 {/if}
             </button>
-            <button
-                class="keyboard-button flex justify-center items-center"
-                on:click={() => {
-                    changeViewMode();
-                    loadPage();
-                }}
-            >
-                {#if deleteMode}
-                    <InlineSVG src="corner-up-left.svg" />
-                {:else}
-                    <InlineSVG src="trash-2.svg" />
-                {/if}
-            </button>
         </div>
     </div>
-    <div class="flex py-10 gap-3">
+    <div class="flex p-10 gap-8">
         {#each configuration.sounds as sound}
-            {#if !deleteMode && sound.uuid !== undefined && sound.path !== undefined}
-                <div class="flex flex-col">
-                    <button
-                        id={sound.uuid}
-                        class="w-[100px] p-3 text-ellipsis whitespace-nowrap overflow-hidden aspect-square border border-solid border-black rounded-full dark:border-white"
-                        on:click={() => {
-                            playSound(sound.path);
-                        }}>{sound.path.replace(/^.*[\\\/]/, "")}</button
-                    >
-                    <!-- svelte-ignore a11y-click-events-have-key-events -->
-                    <span
-                        class="keybind-text"
-                        on:click={async () => {
-                            if (!settingKeybind) {
-                                await addKeybind(sound.uuid);
-                            }
-                        }}
-                        >{settingKeybind === sound.uuid
-                            ? "..."
-                            : sound.keybind !== undefined
-                            ? getKeybindText(sound.keybind)
-                            : "Add keybind"}</span
-                    >
-                </div>
-            {:else if deleteMode && sound.uuid !== undefined && sound.path !== undefined}
+            {#if sound.uuid && sound.path}
                 <button
                     id={sound.uuid}
-                    class="w-[100px] p-3 text-ellipsis whitespace-nowrap overflow-hidden aspect-square border border-solid border-black rounded-full dark:border-white"
-                    on:click={() => {
-                        deleteSound(sound.uuid);
-                    }}>{sound.path.replace(/^.*[\\\/]/, "")}</button
+                    class="flex flex-col justify-between w-[140px] border border-black rounded-lg h-[160px] p-2 bg-white shadow-xl cursor-pointer hover:shadow-none active:bg-gray-100"
+                    on:click|self={() => {
+                        playSound(sound.path);
+                    }}
                 >
+                    <span class="w-full text-ellipsis overflow-hidden pointer-events-none"
+                        >{sound.path.replace(/^.*[\\\/]/, "")}</span
+                    >
+                    <div class="flex w-full gap-1">
+                        <button
+                            class="keybind-text bg-gray-800 text-white rounded w-full py-1 text-sm"
+                            on:click={async () => {
+                                if (!settingKeybind) {
+                                    await addKeybind(sound.uuid);
+                                }
+                            }}
+                            >{settingKeybind === sound.uuid
+                                ? "..."
+                                : sound.keybind !== undefined
+                                ? getKeybindText(sound.keybind)
+                                : "Add keybind"}</button
+                        >
+                        <button
+                            on:click={() => {
+                                deleteSound(sound.uuid);
+                            }}
+                        >
+                            <InlineSVG src="trash-2.svg" />
+                        </button>
+                    </div>
+                </button>
             {/if}
         {/each}
-        {#if !deleteMode}
-            <button
-                class="w-[100px] h-[100px] p-3 text-ellipsis whitespace-nowrap overflow-hidden border border-black border-solid rounded-full dark:border-white"
-                on:click={() => {
-                    addNewSound();
-                }}>+</button
-            >
-        {/if}
+        <button
+            class="w-[50px] h-[50px] p-3 text-ellipsis whitespace-nowrap overflow-hidden border border-black border-solid rounded-md bg-red-500 text-white dark:border-white"
+            on:click={() => {
+                addNewSound();
+            }}><InlineSVG src="plus.svg" /></button
+        >
     </div>
 </main>
 
