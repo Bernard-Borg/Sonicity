@@ -1,5 +1,5 @@
 # SoundboardApp
-A soundboard app similar to Voicemod, but free - previously created as a project to learn ElectronJS and NodeJS with. It has now been rebuilt with (tauri)[https://tauri.app/].
+A soundboard app similar to Voicemod, but free - previously created as a project to learn ElectronJS and NodeJS with. It has now been rebuilt with (tauri)[https://tauri.app/], Svelte and TailwindCSS as a way to reduce the app's size, and learn those technologies.
 
 ## Features
 
