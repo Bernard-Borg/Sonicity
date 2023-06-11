@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { deserialiseKeybind, serialiseKeybind, keybindText, arraysEqual } from "./utils";
     import { open } from "@tauri-apps/api/dialog";
     import { exists, writeTextFile, readTextFile, BaseDirectory, createDir } from "@tauri-apps/api/fs";
     import { convertFileSrc } from "@tauri-apps/api/tauri";
@@ -24,12 +25,11 @@
     // List of currently registered keybinds
     let registeredKeybinds = [];
 
+    // Currently held keys
+    let keysPressed = {};
+
     // Playing soundboard is true when not editing keybinds
     let playingSoundboard = true;
-
-    let tempKeybindStore = [];
-
-    let timeoutTemp = undefined;
 
     let settingKeybind = "";
 
@@ -50,6 +50,7 @@
             let config = await readTextFile("soundboard-app-tauri\\soundboard-app-config.json", {
                 dir: BaseDirectory.AppData
             });
+
             configuration = JSON.parse(config);
         }
     };
@@ -82,7 +83,7 @@
     };
 
     // Displays an open file dialog and adds a new sound config
-    const addNewSound = () => {
+    const addNewSound = async (): Promise<void> => {
         open({
             multiple: false,
             filters: [{ name: "Audio Files", extensions: ["wav", "ogg", "mp3"] }]
@@ -106,7 +107,7 @@
     };
 
     // Deletes a sound from the config
-    const deleteSound = async (uuid) => {
+    const deleteSound = async (uuid: string): Promise<void> => {
         let indexOfItemToDelete = configuration.sounds.findIndex((x) => x.uuid == uuid);
 
         if (indexOfItemToDelete > -1) {
@@ -117,79 +118,27 @@
         }
     };
 
-    // Splits the keybind parts to get a string representation of keybind parts (Ctrl~~A -> [Ctrl, A])
-    function getKeybindParts(keybind: string): Array<string> {
-        let keybindParts = keybind.split("~~");
-        return keybindParts;
-    }
+    // //Check whether a keybind has been pressed
+    // function checkKeybind(event: KeyboardEvent): void {
+    //     for (let i = 0; i < registeredKeybinds.length; i++) {
+    //         let containsControl = getKeybindParts(registeredKeybinds[i].keybind).includes("Ctrl");
 
-    // Converts keybind parts (for example ["Control", "A"]) to string for config (Ctrl~~A)
-    function getKeybindTextForFile(keybindParts: Array<string>): string {
-        let keybindResult = "";
+    //         // If the keybind contains Ctrl but control is not pressed, or Ctrl is pressed but the keybind doesn't contain Ctrl then skip this
+    //         if ((event.ctrlKey && !containsControl) || (!event.ctrlKey && containsControl)) {
+    //             continue;
+    //         }
 
-        for (let part of keybindParts) {
-            if (part == "Control") {
-                keybindResult += "Ctrl~~";
-            } else {
-                keybindResult += part;
-            }
-        }
+    //         if (getKeybindText(null, getKeybindNoCtrl(registeredKeybinds[i].keybind)) == event.key) {
+    //             playSound(registeredKeybinds[i].path);
 
-        return keybindResult;
-    }
-
-    //Concatenate keybind parts into a text string
-    function getKeybindText(keybind: string, keybindParts: Array<string> = null) {
-        if (keybindParts == null) {
-            keybindParts = getKeybindParts(keybind);
-        }
-        let keybindText = "";
-
-        for (let i = 0; i < keybindParts.length; i++) {
-            if (i == keybindParts.length - 1) {
-                keybindText = `${keybindText}${keybindParts[i]}`;
-            } else {
-                keybindText = `${keybindText}${keybindParts[i]}+`;
-            }
-        }
-
-        return keybindText;
-    }
-
-    //Get the keybind parts without Ctrl (just the button to be pressed without Ctrl)
-    function getKeybindNoCtrl(keybind: string) {
-        let keybindParts = getKeybindParts(keybind);
-
-        let ctrlLocation = keybindParts.indexOf("Ctrl");
-
-        if (ctrlLocation > -1) {
-            keybindParts.splice(ctrlLocation, 1);
-        }
-
-        return keybindParts;
-    }
-
-    //Check whether a keybind has been pressed
-    function checkKeybind(event: KeyboardEvent) {
-        for (let i = 0; i < registeredKeybinds.length; i++) {
-            let containsControl = getKeybindParts(registeredKeybinds[i].keybind).includes("Ctrl");
-
-            // If the keybind contains Ctrl but control is not pressed, or Ctrl is pressed but the keybind doesn't contain Ctrl then skip this
-            if ((event.ctrlKey && !containsControl) || (!event.ctrlKey && containsControl)) {
-                continue;
-            }
-
-            if (getKeybindText(null, getKeybindNoCtrl(registeredKeybinds[i].keybind)) == event.key) {
-                playSound(registeredKeybinds[i].path);
-
-                // Can't have multiple sounds bound to the same keybind - remove to allow
-                break;
-            }
-        }
-    }
+    //             // Can't have multiple sounds bound to the same keybind - remove to allow
+    //             break;
+    //         }
+    //     }
+    // }
 
     //Plays a sound with the specified path
-    function playSound(soundPath: string) {
+    function playSound(soundPath: string): void {
         soundPath = convertFileSrc(soundPath);
 
         if (configuration.sequential) {
@@ -213,105 +162,138 @@
         }
     }
 
-    function recordKeybind(event: KeyboardEvent) {
-        if (event.key == "Control" || event.key == "Shift") {
-            if (event.key == "Control") {
-                // Pressing controls resets the keybind
-                if (tempKeybindStore.length > 0) {
-                    tempKeybindStore = [];
-                }
-
-                tempKeybindStore.push("Control");
-                tempKeybindStore = tempKeybindStore;
-            }
-        } else {
-            // Cannot have more than 1 normal character, but can have Control
-            if (
-                (tempKeybindStore.length >= 1 && !tempKeybindStore.includes("Control")) ||
-                (tempKeybindStore.includes("Control") && tempKeybindStore.length > 1)
-            ) {
-                tempKeybindStore = [];
-            }
-
-            tempKeybindStore.push(event.key);
-            tempKeybindStore = tempKeybindStore;
-        }
-    }
-
-    function handleKeydownEvent(event: KeyboardEvent) {
-        if (playingSoundboard) {
-            checkKeybind(event);
-        } else {
-            recordKeybind(event);
-        }
-    }
-
-    function isTempKeybindValid() {
-        if ((tempKeybindStore.includes("Control") && tempKeybindStore.length > 1) || tempKeybindStore.length == 1) {
-            if (timeoutTemp !== undefined) {
-                clearTimeout(timeoutTemp);
-            }
-            return true;
-        } else {
-            timeoutTemp = setTimeout(isTempKeybindValid, 50);
-            return false;
-        }
-    }
-
-    // Bind a keybind to a button
-    async function addKeybind(uuid) {
+    const addKeybind = async (uuid: string): Promise<void> => {
         playingSoundboard = false;
         settingKeybind = uuid;
-
-        while (!isTempKeybindValid()) {
-            await new Promise((resolve) => setTimeout(resolve, 50));
-        }
-
-        if (uuid !== undefined) {
-            let newKeybind = getKeybindTextForFile(tempKeybindStore);
-
-            // If keybind already set, alert the user, otherwise change the config file
-            if (registeredKeybinds.map((x) => x.keybind).includes(newKeybind)) {
-                alert("Keybind already set");
-            } else {
-                let indexOfItemToChange = configuration.sounds.findIndex((x) => x.uuid == uuid);
-                configuration.sounds[indexOfItemToChange].keybind = newKeybind;
-                configuration = configuration;
-
-                saveConfiguration();
-            }
-        }
-
-        playingSoundboard = true;
-        settingKeybind = "";
-        tempKeybindStore = [];
-        clearTimeout(timeoutTemp);
-    }
+    };
 
     // Loads sound config and draws all the buttons
-    async function loadPage() {
+    async function loadPage(): Promise<void> {
         await loadConfiguration();
 
         document.documentElement.classList.add(configuration.darkmode ? "dark-theme" : "light-theme");
-
-        // Get a list of keybinds currently set to a sound effect
-        registeredKeybinds = configuration.sounds.filter((x) => x.keybind !== undefined && x.keybind !== null);
     }
+
+    $: registeredKeybinds = configuration.sounds
+        .filter((x) => x.keybind !== undefined && x.keybind !== null)
+        .map((x) => ({
+            uuid: x.uuid,
+            path: x.path,
+            keybind: deserialiseKeybind(x.keybind)
+        }));
 
     onMount(async () => {
         loadPage();
     });
+
+    // Debouncing mechanism
+    let val = [];
+    let timer;
+
+    const debounce = (v) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+            val = v;
+        }, 150);
+    };
+
+    let tempHeldKeys = [];
+
+    const handleKeyPresses = (heldKeys: string[]) => {
+        if (!heldKeys.length) {
+            return;
+        }
+
+        if (settingKeybind) {
+            tempHeldKeys = heldKeys;
+        } else {
+            //play sound
+        }
+    };
+
+    const saveKeybind = (): boolean => {
+        if (settingKeybind) {
+            let newKeybindKeys = tempHeldKeys.sort();
+
+            if (
+                registeredKeybinds.map((x) => x.keybind).filter((x) => x && arraysEqual(x.sort(), newKeybindKeys))
+                    .length
+            ) {
+                alert("Keybind already set");
+                return false;
+            } else {
+                let indexOfItemToChange = configuration.sounds.findIndex((x) => x.uuid == settingKeybind);
+                configuration.sounds[indexOfItemToChange].keybind = serialiseKeybind(newKeybindKeys);
+                configuration = configuration;
+
+                saveConfiguration();
+                console.debug(`Saved ${serialiseKeybind(newKeybindKeys)} for ${settingKeybind}`);
+                return true;
+            }
+        }
+    };
+
+    const stopRecordingKeybind = (): void => {
+        settingKeybind = "";
+        tempHeldKeys = [];
+        playingSoundboard = true;
+    };
+
+    const getDisplay = (uuid: string, heldKeys: string, keybind: string): string => {
+        if (settingKeybind !== uuid) {
+            if (keybind) {
+                return keybindText(deserialiseKeybind(keybind));
+            } else {
+                return "Add keybind";
+            }
+        } else {
+            if (heldKeys) {
+                return heldKeys;
+            } else {
+                return "...";
+            }
+        }
+    };
+
+    // The following are special keys with special functionality and therefore cannot be used for keybinds
+    let forbiddenKeybindKeys = ["Escape", "Enter", "NumpadEnter"];
+
+    $: debounce(Object.keys(keysPressed).filter((x) => keysPressed[x]));
+    $: handleKeyPresses(val);
 </script>
 
 <svelte:window
     on:keydown={(e) => {
-        handleKeydownEvent(e);
+        if (!forbiddenKeybindKeys.includes(e.code)) {
+            keysPressed[e.code] = true;
+        } else {
+            if (settingKeybind) {
+                if (e.code === "Escape") {
+                    // do escape stuff
+                    stopRecordingKeybind();
+                } else if (e.code === "Enter" || e.code == "NumpadEnter") {
+                    // save keybind
+                    if (tempHeldKeys.length) {
+                        if (saveKeybind()) {
+                            stopRecordingKeybind();
+                        }
+                    }
+                }
+            }
+        }
+    }}
+    on:keyup={(e) => {
+        if (e.code in keysPressed) {
+            keysPressed[e.code] = false;
+        }
     }}
 />
 
 <main class="w-full h-screen bg-blue-100 dark:bg-dark flex flex-col">
     <div class="h-[100px] flex justify-between p-8 items-center">
         <h1 class="text-dark dark:text-white text-3xl font-bold">Sound Effects</h1>
+        <!-- {keybindText(Object.keys(keysPressed).filter((x) => keysPressed[x]))}
+        {registeredKeybinds.map((x) => keybindText(x.keybind))} -->
         <div class="flex items-center gap-x-3">
             <button
                 class="keyboard-button flex justify-center items-center"
@@ -337,23 +319,28 @@
                         playSound(sound.path);
                     }}
                 >
-                    <span class="w-full text-ellipsis overflow-hidden pointer-events-none"
-                        >{sound.path.replace(/^.*[\\\/]/, "")}</span
+                    <span
+                        class="w-full max-h-[70px] text-ellipsis overflow-hidden active:pointer-events-none"
+                        title={sound.path.replace(/^.*[\\\/]/, "")}
                     >
+                        {sound.path.replace(/^.*[\\\/]/, "")}
+                    </span>
                     <div class="flex w-full gap-1">
                         <button
-                            class="keybind-text bg-gray-800 text-white rounded w-full py-1 text-sm"
-                            on:click={async () => {
-                                if (!settingKeybind) {
-                                    await addKeybind(sound.uuid);
+                            class="keybind-text bg-gray-800 text-white rounded w-full py-1 text-sm active:outline-none text-ellipsis overflow-hidden"
+                            on:click={() => {
+                                stopRecordingKeybind();
+                                addKeybind(sound.uuid);
+                            }}
+                            on:keydown={(e) => {
+                                if (e.key == "Enter") {
+                                    e.preventDefault();
                                 }
                             }}
-                            >{settingKeybind === sound.uuid
-                                ? "..."
-                                : sound.keybind !== undefined
-                                ? getKeybindText(sound.keybind)
-                                : "Add keybind"}</button
+                            title={getDisplay(sound.uuid, keybindText(tempHeldKeys), sound.keybind)}
                         >
+                            {getDisplay(sound.uuid, keybindText(tempHeldKeys), sound.keybind)}
+                        </button>
                         <button
                             on:click={() => {
                                 deleteSound(sound.uuid);
