@@ -191,10 +191,14 @@
     let timer;
 
     const debounce = (v) => {
-        clearTimeout(timer);
-        timer = setTimeout(() => {
+        if (settingKeybind) {
+            clearTimeout(timer);
+            timer = setTimeout(() => {
+                val = v;
+            }, 150);
+        } else {
             val = v;
-        }, 150);
+        }
     };
 
     let tempHeldKeys = [];
@@ -207,7 +211,13 @@
         if (settingKeybind) {
             tempHeldKeys = heldKeys;
         } else {
-            //play sound
+            let keybindExists = registeredKeybinds.filter(
+                (x) => x.keybind && arraysEqual(x.keybind.sort(), heldKeys.sort())
+            );
+
+            if (keybindExists.length) {
+                playSound(keybindExists[0].path);
+            }
         }
     };
 
