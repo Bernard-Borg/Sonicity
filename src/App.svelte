@@ -226,8 +226,10 @@
             let newKeybindKeys = tempHeldKeys.sort();
 
             if (
-                registeredKeybinds.map((x) => x.keybind).filter((x) => x && arraysEqual(x.sort(), newKeybindKeys))
-                    .length
+                registeredKeybinds
+                    .filter((x) => x.uuid !== settingKeybind)
+                    .map((x) => x.keybind)
+                    .filter((x) => x && arraysEqual(x.sort(), newKeybindKeys)).length
             ) {
                 alert("Keybind already set");
                 return false;
