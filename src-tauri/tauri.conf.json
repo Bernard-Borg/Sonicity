@@ -47,7 +47,7 @@
                 "icons/icon.icns",
                 "icons/icon.ico"
             ],
-            "identifier": "com.tauri.dev",
+            "identifier": "soundboard-app",
             "longDescription": "",
             "macOS": {
                 "entitlements": null,
