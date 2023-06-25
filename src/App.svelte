@@ -3,15 +3,20 @@
     import { open } from "@tauri-apps/api/dialog";
     import { exists, writeTextFile, readTextFile, BaseDirectory, createDir } from "@tauri-apps/api/fs";
     import { convertFileSrc } from "@tauri-apps/api/tauri";
-    import { onMount } from "svelte";
+    import { onDestroy, onMount } from "svelte";
     import { v4 as uuidv4 } from "uuid";
     import InlineSVG from "svelte-inline-svg";
+    import { listen, type UnlistenFn } from '@tauri-apps/api/event'
 
     type Sound = {
         uuid: string;
         path: string;
         keybind?: string;
     };
+
+    type Payload = {
+        key_pressed: string;
+    }
 
     type SoundboardConfiguration = {
         darkmode: boolean;
@@ -38,6 +43,9 @@
         darkmode: true,
         sequential: true
     };
+
+    let unlisten: UnlistenFn;
+    let unlisten2: UnlistenFn;
 
     // Loads configuration from file
     const loadConfiguration = async () => {
@@ -183,8 +191,24 @@
         }));
 
     onMount(async () => {
+        unlisten = await listen('keypress', (event) => {
+            console.log(event.payload);
+            console.log(`Key down: ${(event.payload as Payload).key_pressed}`);
+        })
+
+        unlisten2 = await listen('keyup', (event) => {
+            console.log(event.payload);
+            console.log(`Key up: ${(event.payload as Payload).key_pressed}`);
+        })
+
         loadPage();
     });
+
+    onDestroy(() => {
+        if (unlisten) {
+            unlisten();
+        }
+    })
 
     // Debouncing mechanism
     let val = [];
