@@ -10,27 +10,22 @@ struct Payload {
     key_pressed: String
 }
 
+#[tauri::command]
+fn listen_to_keys(app_handle: tauri::AppHandle) {
+    use device_query::{DeviceEvents, DeviceState};
+    let device_state = DeviceState::new();
+    
+    println!("Hi");
+
+    let _guard = device_state.on_key_down(move |key| {
+        println!("Keyboard key down: {:?}", key);
+        app_handle.emit_all("keypress", Payload { key_pressed: key.to_string() });
+    });
+}
+
 fn main() {
     tauri::Builder::default()
-        .setup(|app|  {
-            let handle = app.handle();
-            let handle2 = app.handle();
-
-            use device_query::{DeviceEvents, DeviceState};
-            let device_state = DeviceState::new();
-
-            println!("{:?}", device_state);
-
-            let _ = device_state.on_key_down(move |key| {
-                let _ = handle.emit_all("keypress", Payload { key_pressed: key.to_string() });
-            });
-
-            let _ = device_state.on_key_up(move |key| {
-                let _ = handle2.emit_all("keyup", Payload { key_pressed: key.to_string() });
-            });
-
-            Ok(())
-        })
+        .invoke_handler(tauri::generate_handler![listen_to_keys])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

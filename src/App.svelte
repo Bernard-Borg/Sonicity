@@ -2,7 +2,7 @@
     import { deserialiseKeybind, serialiseKeybind, keybindText, arraysEqual } from "./utils";
     import { open } from "@tauri-apps/api/dialog";
     import { exists, writeTextFile, readTextFile, BaseDirectory, createDir } from "@tauri-apps/api/fs";
-    import { convertFileSrc } from "@tauri-apps/api/tauri";
+    import { convertFileSrc, invoke } from "@tauri-apps/api/tauri";
     import { onDestroy, onMount } from "svelte";
     import { v4 as uuidv4 } from "uuid";
     import InlineSVG from "svelte-inline-svg";
@@ -291,6 +291,10 @@
         }
     };
 
+    const startKeyListening = () => {
+        invoke("listen_to_keys")
+    }
+
     // The following are special keys with special functionality and therefore cannot be used for keybinds
     let forbiddenKeybindKeys = ["Escape", "Enter", "NumpadEnter"];
 
@@ -326,6 +330,7 @@
 />
 
 <main class="w-full h-screen bg-blue-100 dark:bg-dark flex flex-col">
+    <button on:click={ () => startKeyListening() }>Test</button>
     <div class="h-[100px] flex justify-between p-8 items-center">
         <h1 class="text-dark dark:text-white text-3xl font-bold">Sound Effects</h1>
         <!-- {keybindText(Object.keys(keysPressed).filter((x) => keysPressed[x]))}
