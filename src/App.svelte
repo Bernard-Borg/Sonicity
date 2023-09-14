@@ -151,11 +151,14 @@
 
         if (configuration.sequential) {
             let audio = new Audio(soundPath);
+            
             currentAudio.forEach((sound) => {
                 sound.pause();
                 sound.currentTime = 0;
             });
+
             currentAudio = [audio];
+
             audio.play();
         } else {
             let audio = new Audio(soundPath);
@@ -192,13 +195,38 @@
 
     onMount(async () => {
         unlisten = await listen('keypress', (event) => {
+            let pressedKey = (event.payload as Payload).key_pressed;
             console.log(event.payload);
-            console.log(`Key down: ${(event.payload as Payload).key_pressed}`);
+            console.log(`Key down: ${pressedKey}`);
+
+            if (!forbiddenKeybindKeys.includes(pressedKey)) {
+                keysPressed[pressedKey] = true;
+            } else {
+                if (settingKeybind) {
+                    if (pressedKey === "Escape") {
+                        // do escape stuff
+                        stopRecordingKeybind();
+                    } else if (pressedKey === "Enter" || pressedKey == "NumpadEnter") {
+                        // save keybind
+                        if (tempHeldKeys.length) {
+                            if (saveKeybind()) {
+                                stopRecordingKeybind();
+                            }
+                        }
+                    }
+                }
+            }
         })
 
         unlisten2 = await listen('keyup', (event) => {
+            let pressedKey = (event.payload as Payload).key_pressed;
+
             console.log(event.payload);
-            console.log(`Key up: ${(event.payload as Payload).key_pressed}`);
+            console.log(`Key up: ${pressedKey}`);
+
+            if (pressedKey in keysPressed) {
+                keysPressed[pressedKey] = false;
+            }
         })
 
         loadPage();
@@ -207,6 +235,10 @@
     onDestroy(() => {
         if (unlisten) {
             unlisten();
+        }
+
+        if (unlisten2) {
+            unlisten2();
         }
     })
 
@@ -302,35 +334,8 @@
     $: handleKeyPresses(val);
 </script>
 
-<svelte:window
-    on:keydown={(e) => {
-        if (!forbiddenKeybindKeys.includes(e.code)) {
-            keysPressed[e.code] = true;
-        } else {
-            if (settingKeybind) {
-                if (e.code === "Escape") {
-                    // do escape stuff
-                    stopRecordingKeybind();
-                } else if (e.code === "Enter" || e.code == "NumpadEnter") {
-                    // save keybind
-                    if (tempHeldKeys.length) {
-                        if (saveKeybind()) {
-                            stopRecordingKeybind();
-                        }
-                    }
-                }
-            }
-        }
-    }}
-    on:keyup={(e) => {
-        if (e.code in keysPressed) {
-            keysPressed[e.code] = false;
-        }
-    }}
-/>
-
 <main class="w-full h-screen bg-blue-100 dark:bg-dark flex flex-col">
-    <button on:click={ () => startKeyListening() }>Test</button>
+    <button on:click={ () => startKeyListening() }>Test { Object.keys(keysPressed) }</button>
     <div class="h-[100px] flex justify-between p-8 items-center">
         <h1 class="text-dark dark:text-white text-3xl font-bold">Sound Effects</h1>
         <!-- {keybindText(Object.keys(keysPressed).filter((x) => keysPressed[x]))}
