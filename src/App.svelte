@@ -18,10 +18,32 @@ let currentAudio: HTMLAudioElement[] = [];
 // Currently held keys
 let keysPressed: Record<string, boolean> = {};
 
+// The following are special keys with special functionality and therefore cannot be used for keybinds
+let forbiddenKeybindKeys = ["Escape", "Enter", "NumpadEnter"];
+
+// Stores the UUID of the sound that the user is setting a keybind for
 let settingKeybindForSound = "";
 
 let unlisten: UnlistenFn;
 let unlisten2: UnlistenFn;
+
+preferences.subscribe((preferences) => {
+    let documentElement = document.documentElement;
+
+    if (preferences.darkmode) {
+        if (documentElement.classList.contains("dark-theme")) {
+            documentElement.classList.replace("dark-theme", "light-theme");
+        } else {
+            documentElement.classList.add("light-theme");
+        }
+    } else {
+        if (documentElement.classList.contains("light-theme")) {
+            documentElement.classList.replace("light-theme", "dark-theme");
+        } else {
+            documentElement.classList.add("dark-theme");
+        }
+    }
+});
 
 // Theme management
 const changeTheme = async () => {
@@ -84,6 +106,7 @@ function playSound(soundPath: string): void {
     soundPath = convertFileSrc(soundPath);
 
     if ($preferences.sequential) {
+        // Stop any previous sounds and start again
         let audio = new Audio(soundPath);
         
         currentAudio.forEach((sound) => {
@@ -95,6 +118,7 @@ function playSound(soundPath: string): void {
 
         audio.play();
     } else {
+        // Play the sound no matter what
         let audio = new Audio(soundPath);
         audio.play();
 
@@ -116,6 +140,7 @@ $: registeredKeybinds = $preferences.sounds
     }));
 
 onMount(async () => {
+    // Listen to key press events from the backend
     unlisten = await listen('keypress', (event) => {
         let pressedKey = (event.payload as Payload).key_pressed;
 
@@ -138,6 +163,7 @@ onMount(async () => {
         }
     })
 
+    // Listen to key up events from the backend
     unlisten2 = await listen('keyup', (event) => {
         let pressedKey = (event.payload as Payload).key_pressed;
 
@@ -147,6 +173,7 @@ onMount(async () => {
     })
 });
 
+// Destroy event listeners when the component is destroyed
 onDestroy(() => {
     if (unlisten) {
         unlisten();
@@ -192,6 +219,7 @@ const handleKeyPresses = (heldKeys: string[]) => {
     }
 };
 
+// Saves the keybind in preferences only if has not been used before
 const saveKeybind = (): boolean => {
     if (settingKeybindForSound) {
         let newKeybindKeys = tempHeldKeys.sort();
@@ -219,11 +247,13 @@ const saveKeybind = (): boolean => {
     return false;
 };
 
+// Stops keybind recording
 const stopRecordingKeybind = (): void => {
     settingKeybindForSound = "";
     tempHeldKeys = [];
 };
 
+// Returns what text to display in the "record keybind" button
 const getDisplay = (uuid: string, heldKeys: string, keybind?: string): string => {
     if (settingKeybindForSound !== uuid) {
         if (keybind) {
@@ -240,14 +270,12 @@ const getDisplay = (uuid: string, heldKeys: string, keybind?: string): string =>
     }
 };
 
-// The following are special keys with special functionality and therefore cannot be used for keybinds
-let forbiddenKeybindKeys = ["Escape", "Enter", "NumpadEnter"];
-
 $: debounce(Object.keys(keysPressed).filter((x) => keysPressed[x] === true));
 $: handleKeyPresses(val);
 </script>
 
-<svelte:window on:click|self={() => stopRecordingKeybind()} class="{$preferences.darkmode ? 'dark-theme' : 'light-theme'}" />
+<svelte:window on:click|self={() => stopRecordingKeybind()} />
+<svelte:document class="{$preferences.darkmode ? 'dark-theme' : 'light-theme'}" />
 
 <main class="w-full h-screen bg-blue-100 dark:bg-dark flex flex-col">
     <div class="h-[100px] flex justify-between p-8 items-center">
