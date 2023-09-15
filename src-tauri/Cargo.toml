@@ -5,7 +5,7 @@ description = "A Soundboard App built using Tauri-Svelte"
 authors = ["Bernard-Borg"]
 license = "GNU GPLv3"
 repository = "https://github.com/Bernard-Borg/SoundboardApp"
-edition = "2023"
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
