@@ -788,6 +788,11 @@ svelte-inline-svg@^1.2.0:
   resolved "https://registry.npmjs.org/svelte-inline-svg/-/svelte-inline-svg-1.2.0.tgz"
   integrity sha512-mYyvz7uddfaj/yXB5zyAyYSPUyE7vdK8En7dGJjZf3XImdAfOuDxhNn5OFF84BQeJFVZ7T8/rJU33emiHKdLhQ==
 
+svelte-local-storage-store@^0.6.0:
+  version "0.6.0"
+  resolved "https://registry.npmjs.org/svelte-local-storage-store/-/svelte-local-storage-store-0.6.0.tgz"
+  integrity sha512-UbCY/yT/YUadU5IX/gZkoRQnA+ebFZHKKQjlJvfWHnBj3CPe9sNn8ndxYz/xy4LUzGjuBLq8+wH5RYK54ba3wA==
+
 svelte-preprocess@^5.0.0:
   version "5.0.1"
   resolved "https://registry.npmjs.org/svelte-preprocess/-/svelte-preprocess-5.0.1.tgz"
@@ -800,7 +805,7 @@ svelte-preprocess@^5.0.0:
     sorcery "^0.11.0"
     strip-indent "^3.0.0"
 
-svelte@^3.23.0, svelte@^3.54.0, svelte@^3.55.0, svelte@>=3.19.0:
+svelte@^3.23.0, "svelte@^3.48.0 || ^4.0.0", svelte@^3.54.0, svelte@^3.55.0, svelte@>=3.19.0:
   version "3.55.1"
   resolved "https://registry.npmjs.org/svelte/-/svelte-3.55.1.tgz"
   integrity sha512-S+87/P0Ve67HxKkEV23iCdAh/SX1xiSfjF1HOglno/YTbSTW7RniICMCofWGdJJbdjw3S+0PfFb1JtGfTXE0oQ==

@@ -1,28 +1,16 @@
 <script lang="ts">
     import { deserialiseKeybind, serialiseKeybind, keybindText, arraysEqual } from "./utils";
     import { open } from "@tauri-apps/api/dialog";
-    import { exists, writeTextFile, readTextFile, BaseDirectory, createDir } from "@tauri-apps/api/fs";
-    import { convertFileSrc, invoke } from "@tauri-apps/api/tauri";
+    import { convertFileSrc } from "@tauri-apps/api/tauri";
     import { onDestroy, onMount } from "svelte";
     import { v4 as uuidv4 } from "uuid";
     import InlineSVG from "svelte-inline-svg";
     import { listen, type UnlistenFn } from '@tauri-apps/api/event'
-
-    type Sound = {
-        uuid: string;
-        path: string;
-        keybind?: string;
-    };
+    import { preferences } from "./stores/preferences";
 
     type Payload = {
         key_pressed: string;
     }
-
-    type SoundboardConfiguration = {
-        darkmode: boolean;
-        sequential: boolean;
-        sounds: Array<Sound>;
-    };
 
     // List of currently playing audio for chaos mode
     let currentAudio = [];
@@ -38,56 +26,35 @@
 
     let settingKeybind = "";
 
-    let configuration: SoundboardConfiguration = {
-        sounds: [],
-        darkmode: true,
-        sequential: true
-    };
-
-    let unlisten: UnlistenFn;
-    let unlisten2: UnlistenFn;
-
-    // Loads configuration from file
-    const loadConfiguration = async () => {
-        if (!(await exists("soundboard-app-tauri\\soundboard-app-config.json", { dir: BaseDirectory.AppData }))) {
-            await createDir("soundboard-app-tauri", { dir: BaseDirectory.AppData, recursive: true });
-            writeTextFile("soundboard-app-tauri\\soundboard-app-config.json", JSON.stringify(configuration, null, 4), {
-                dir: BaseDirectory.AppData
-            });
-        } else {
-            let config = await readTextFile("soundboard-app-tauri\\soundboard-app-config.json", {
-                dir: BaseDirectory.AppData
-            });
-
-            configuration = JSON.parse(config);
-        }
-    };
-
-    // Rewrites the configuration to file
-    const saveConfiguration = async () => {
-        if (!(await exists("soundboard-app-tauri", { dir: BaseDirectory.AppData }))) {
-            await createDir("soundboard-app-tauri", { dir: BaseDirectory.AppData, recursive: true });
-        }
-
-        writeTextFile("soundboard-app-tauri\\soundboard-app-config.json", JSON.stringify(configuration, null, 4), {
-            dir: BaseDirectory.AppData
-        });
-    };
-
-    // Theme management
-    const changeTheme = async () => {
+    preferences.subscribe((preferences) => {
         let documentElement = document.documentElement;
 
-        if (configuration.darkmode) {
+        if (preferences.darkmode) {
             documentElement.classList.remove("dark-theme");
             documentElement.classList.add("light-theme");
         } else {
             documentElement.classList.remove("light-theme");
             documentElement.classList.add("dark-theme");
         }
+    });
 
-        configuration.darkmode = !configuration.darkmode;
-        saveConfiguration();
+    let unlisten: UnlistenFn;
+    let unlisten2: UnlistenFn;
+
+    // Theme management
+    const changeTheme = async () => {
+        preferences.update((preferences) => {
+            preferences.darkmode = !preferences.darkmode;
+            return preferences;
+        });
+    };
+
+    // Playmode management
+    const changePlaymode = async () => {
+        preferences.update((preferences) => {
+            preferences.sequential = !preferences.sequential;
+            return preferences;
+        });
     };
 
     // Displays an open file dialog and adds a new sound config
@@ -106,50 +73,31 @@
             }
 
             if (soundPath !== undefined) {
-                configuration.sounds.push({ uuid: uuid, path: soundPath });
-                configuration = configuration;
-
-                saveConfiguration();
+                preferences.update((preferences) => {
+                    preferences.sounds.push({ uuid: uuid, path: soundPath });
+                    return preferences
+                });
             }
         });
     };
 
     // Deletes a sound from the config
     const deleteSound = async (uuid: string): Promise<void> => {
-        let indexOfItemToDelete = configuration.sounds.findIndex((x) => x.uuid == uuid);
+        let indexOfItemToDelete = $preferences.sounds.findIndex((x) => x.uuid == uuid);
 
         if (indexOfItemToDelete > -1) {
-            configuration.sounds.splice(indexOfItemToDelete, 1);
-            configuration = configuration;
-
-            saveConfiguration();
+            preferences.update((preferences) => {
+                preferences.sounds.splice(indexOfItemToDelete, 1);
+                return preferences
+            });
         }
     };
-
-    // //Check whether a keybind has been pressed
-    // function checkKeybind(event: KeyboardEvent): void {
-    //     for (let i = 0; i < registeredKeybinds.length; i++) {
-    //         let containsControl = getKeybindParts(registeredKeybinds[i].keybind).includes("Ctrl");
-
-    //         // If the keybind contains Ctrl but control is not pressed, or Ctrl is pressed but the keybind doesn't contain Ctrl then skip this
-    //         if ((event.ctrlKey && !containsControl) || (!event.ctrlKey && containsControl)) {
-    //             continue;
-    //         }
-
-    //         if (getKeybindText(null, getKeybindNoCtrl(registeredKeybinds[i].keybind)) == event.key) {
-    //             playSound(registeredKeybinds[i].path);
-
-    //             // Can't have multiple sounds bound to the same keybind - remove to allow
-    //             break;
-    //         }
-    //     }
-    // }
 
     //Plays a sound with the specified path
     function playSound(soundPath: string): void {
         soundPath = convertFileSrc(soundPath);
 
-        if (configuration.sequential) {
+        if ($preferences.sequential) {
             let audio = new Audio(soundPath);
             
             currentAudio.forEach((sound) => {
@@ -178,14 +126,7 @@
         settingKeybind = uuid;
     };
 
-    // Loads sound config and draws all the buttons
-    async function loadPage(): Promise<void> {
-        await loadConfiguration();
-
-        document.documentElement.classList.add(configuration.darkmode ? "dark-theme" : "light-theme");
-    }
-
-    $: registeredKeybinds = configuration.sounds
+    $: registeredKeybinds = $preferences.sounds
         .filter((x) => x.keybind !== undefined && x.keybind !== null)
         .map((x) => ({
             uuid: x.uuid,
@@ -196,7 +137,6 @@
     onMount(async () => {
         unlisten = await listen('keypress', (event) => {
             let pressedKey = (event.payload as Payload).key_pressed;
-            console.log(event.payload);
             console.log(`Key down: ${pressedKey}`);
 
             if (!forbiddenKeybindKeys.includes(pressedKey)) {
@@ -225,8 +165,6 @@
                 keysPressed[pressedKey] = false;
             }
         })
-
-        loadPage();
     });
 
     onDestroy(() => {
@@ -287,11 +225,13 @@
                 alert("Keybind already set");
                 return false;
             } else {
-                let indexOfItemToChange = configuration.sounds.findIndex((x) => x.uuid == settingKeybind);
-                configuration.sounds[indexOfItemToChange].keybind = serialiseKeybind(newKeybindKeys);
-                configuration = configuration;
+                let indexOfItemToChange = $preferences.sounds.findIndex((x) => x.uuid == settingKeybind);
 
-                saveConfiguration();
+                preferences.update((preferences) => {
+                    preferences.sounds[indexOfItemToChange].keybind = serialiseKeybind(newKeybindKeys);
+                    return preferences
+                });
+                
                 console.debug(`Saved ${serialiseKeybind(newKeybindKeys)} for ${settingKeybind}`);
                 return true;
             }
@@ -332,8 +272,6 @@
 <main class="w-full h-screen bg-blue-100 dark:bg-dark flex flex-col">
     <div class="h-[100px] flex justify-between p-8 items-center">
         <h1 class="text-dark dark:text-white text-3xl font-bold">Sound Effects</h1>
-        <!-- {keybindText()}
-        {registeredKeybinds.map((x) => keybindText(x.keybind))} -->
         <div class="flex items-center gap-x-3">
             <button
                 class="keyboard-button flex justify-center items-center"
@@ -341,7 +279,7 @@
                     changePlaymode();
                 }}
             >
-                {#if configuration.sequential}
+                {#if $preferences.sequential}
                     <InlineSVG src="stop-circle.svg" />
                 {:else}
                     <InlineSVG src="chevrons-right.svg" />
@@ -353,7 +291,7 @@
                     changeTheme();
                 }}
             >
-                {#if configuration.darkmode}
+                {#if $preferences.darkmode}
                     <InlineSVG src="sun.svg" />
                 {:else}
                     <InlineSVG src="moon.svg" />
@@ -362,7 +300,7 @@
         </div>
     </div>
     <div class="flex p-10 gap-8">
-        {#each configuration.sounds as sound}
+        {#each $preferences.sounds as sound}
             {#if sound.uuid && sound.path}
                 <button
                     id={sound.uuid}

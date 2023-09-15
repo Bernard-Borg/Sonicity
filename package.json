@@ -14,6 +14,7 @@
     "@tauri-apps/api": "^1.4.0",
     "sass": "^1.58.3",
     "svelte-inline-svg": "^1.2.0",
+    "svelte-local-storage-store": "^0.6.0",
     "uuid": "^9.0.0"
   },
   "devDependencies": {
