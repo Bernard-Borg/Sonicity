@@ -66,7 +66,7 @@
             }
         },
         "security": {
-            "csp": "default-src 'self'; img-src 'self' asset: https://asset.localhost"
+            "csp": "default-src 'self'; img-src 'self' asset: https://asset.localhost; style-src-elem 'self' fonts.googleapis.com; font-src 'self' fonts.googleapis.com; media-src 'self' asset: https://asset.localhost"
         },
         "updater": {
             "active": false
