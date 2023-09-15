@@ -221,9 +221,6 @@
         unlisten2 = await listen('keyup', (event) => {
             let pressedKey = (event.payload as Payload).key_pressed;
 
-            console.log(event.payload);
-            console.log(`Key up: ${pressedKey}`);
-
             if (pressedKey in keysPressed) {
                 keysPressed[pressedKey] = false;
             }
@@ -251,7 +248,7 @@
             clearTimeout(timer);
             timer = setTimeout(() => {
                 val = v;
-            }, 150);
+            }, 10);
         } else {
             val = v;
         }
@@ -323,24 +320,33 @@
         }
     };
 
-    const startKeyListening = () => {
-        invoke("listen_to_keys")
-    }
-
     // The following are special keys with special functionality and therefore cannot be used for keybinds
     let forbiddenKeybindKeys = ["Escape", "Enter", "NumpadEnter"];
 
-    $: debounce(Object.keys(keysPressed).filter((x) => keysPressed[x]));
+    $: debounce(Object.keys(keysPressed).filter((x) => keysPressed[x] === true));
     $: handleKeyPresses(val);
 </script>
 
+<svelte:window on:click={() => saveKeybind()} />
+
 <main class="w-full h-screen bg-blue-100 dark:bg-dark flex flex-col">
-    <button on:click={ () => startKeyListening() }>Test { Object.keys(keysPressed) }</button>
     <div class="h-[100px] flex justify-between p-8 items-center">
         <h1 class="text-dark dark:text-white text-3xl font-bold">Sound Effects</h1>
-        <!-- {keybindText(Object.keys(keysPressed).filter((x) => keysPressed[x]))}
+        <!-- {keybindText()}
         {registeredKeybinds.map((x) => keybindText(x.keybind))} -->
         <div class="flex items-center gap-x-3">
+            <button
+                class="keyboard-button flex justify-center items-center"
+                on:click={() => {
+                    changePlaymode();
+                }}
+            >
+                {#if configuration.sequential}
+                    <InlineSVG src="stop-circle.svg" />
+                {:else}
+                    <InlineSVG src="chevrons-right.svg" />
+                {/if}
+            </button>
             <button
                 class="keyboard-button flex justify-center items-center"
                 on:click={() => {
