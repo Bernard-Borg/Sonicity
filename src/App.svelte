@@ -1,273 +1,256 @@
 <script lang="ts">
-    import { deserialiseKeybind, serialiseKeybind, keybindText, arraysEqual } from "./utils";
-    import { open } from "@tauri-apps/api/dialog";
-    import { convertFileSrc } from "@tauri-apps/api/tauri";
-    import { onDestroy, onMount } from "svelte";
-    import { v4 as uuidv4 } from "uuid";
-    import InlineSVG from "svelte-inline-svg";
-    import { listen, type UnlistenFn } from '@tauri-apps/api/event'
-    import { preferences } from "./stores/preferences";
+import { deserialiseKeybind, serialiseKeybind, keybindText, arraysEqual } from "./utils";
+import { open } from "@tauri-apps/api/dialog";
+import { convertFileSrc } from "@tauri-apps/api/tauri";
+import { onDestroy, onMount } from "svelte";
+import { v4 as uuidv4 } from "uuid";
+import InlineSVG from "svelte-inline-svg";
+import { listen, type UnlistenFn } from '@tauri-apps/api/event'
+import { preferences } from "./stores/preferences";
 
-    type Payload = {
-        key_pressed: string;
-    }
+type Payload = {
+    key_pressed: string;
+}
 
-    // List of currently playing audio for chaos mode
-    let currentAudio = [];
+// List of currently playing audio for chaos mode
+let currentAudio = [];
 
-    // List of currently registered keybinds
-    let registeredKeybinds = [];
+// Currently held keys
+let keysPressed = {};
 
-    // Currently held keys
-    let keysPressed = {};
+// Playing soundboard is true when not editing keybinds
+let playingSoundboard = true;
 
-    // Playing soundboard is true when not editing keybinds
-    let playingSoundboard = true;
+let settingKeybind = "";
 
-    let settingKeybind = "";
+let unlisten: UnlistenFn;
+let unlisten2: UnlistenFn;
 
-    preferences.subscribe((preferences) => {
-        let documentElement = document.documentElement;
-
-        if (preferences.darkmode) {
-            documentElement.classList.remove("dark-theme");
-            documentElement.classList.add("light-theme");
-        } else {
-            documentElement.classList.remove("light-theme");
-            documentElement.classList.add("dark-theme");
-        }
+// Theme management
+const changeTheme = async () => {
+    preferences.update((preferences) => {
+        preferences.darkmode = !preferences.darkmode;
+        return preferences;
     });
+};
 
-    let unlisten: UnlistenFn;
-    let unlisten2: UnlistenFn;
+// Playmode management
+const changePlaymode = async () => {
+    preferences.update((preferences) => {
+        preferences.sequential = !preferences.sequential;
+        return preferences;
+    });
+};
 
-    // Theme management
-    const changeTheme = async () => {
-        preferences.update((preferences) => {
-            preferences.darkmode = !preferences.darkmode;
-            return preferences;
-        });
-    };
+// Displays an open file dialog and adds a new sound config
+const addNewSound = async (): Promise<void> => {
+    open({
+        multiple: false,
+        filters: [{ name: "Audio Files", extensions: ["wav", "ogg", "mp3"] }]
+    }).then((result) => {
+        let uuid = uuidv4();
+        let soundPath = "";
 
-    // Playmode management
-    const changePlaymode = async () => {
-        preferences.update((preferences) => {
-            preferences.sequential = !preferences.sequential;
-            return preferences;
-        });
-    };
+        if (Array.isArray(result)) {
+            soundPath = result[0];
+        } else {
+            soundPath = result;
+        }
 
-    // Displays an open file dialog and adds a new sound config
-    const addNewSound = async (): Promise<void> => {
-        open({
-            multiple: false,
-            filters: [{ name: "Audio Files", extensions: ["wav", "ogg", "mp3"] }]
-        }).then((result) => {
-            let uuid = uuidv4();
-            let soundPath = "";
-
-            if (Array.isArray(result)) {
-                soundPath = result[0];
-            } else {
-                soundPath = result;
-            }
-
-            if (soundPath !== undefined) {
-                preferences.update((preferences) => {
-                    preferences.sounds.push({ uuid: uuid, path: soundPath });
-                    return preferences
-                });
-            }
-        });
-    };
-
-    // Deletes a sound from the config
-    const deleteSound = async (uuid: string): Promise<void> => {
-        let indexOfItemToDelete = $preferences.sounds.findIndex((x) => x.uuid == uuid);
-
-        if (indexOfItemToDelete > -1) {
+        if (soundPath !== undefined) {
             preferences.update((preferences) => {
-                preferences.sounds.splice(indexOfItemToDelete, 1);
+                preferences.sounds.push({ uuid: uuid, path: soundPath });
                 return preferences
             });
         }
-    };
+    });
+};
 
-    //Plays a sound with the specified path
-    function playSound(soundPath: string): void {
-        soundPath = convertFileSrc(soundPath);
+// Deletes a sound from the config
+const deleteSound = async (uuid: string): Promise<void> => {
+    let indexOfItemToDelete = $preferences.sounds.findIndex((x) => x.uuid == uuid);
 
-        if ($preferences.sequential) {
-            let audio = new Audio(soundPath);
-            
-            currentAudio.forEach((sound) => {
-                sound.pause();
-                sound.currentTime = 0;
-            });
-
-            currentAudio = [audio];
-
-            audio.play();
-        } else {
-            let audio = new Audio(soundPath);
-            audio.play();
-
-            audio.onended = function () {
-                let index = currentAudio.indexOf(audio);
-                currentAudio.splice(index, 1);
-            };
-
-            currentAudio.push(audio);
-        }
+    if (indexOfItemToDelete > -1) {
+        preferences.update((preferences) => {
+            preferences.sounds.splice(indexOfItemToDelete, 1);
+            return preferences
+        });
     }
+};
 
-    const addKeybind = async (uuid: string): Promise<void> => {
-        playingSoundboard = false;
-        settingKeybind = uuid;
-    };
+//Plays a sound with the specified path
+function playSound(soundPath: string): void {
+    soundPath = convertFileSrc(soundPath);
 
-    $: registeredKeybinds = $preferences.sounds
-        .filter((x) => x.keybind !== undefined && x.keybind !== null)
-        .map((x) => ({
-            uuid: x.uuid,
-            path: x.path,
-            keybind: deserialiseKeybind(x.keybind)
-        }));
+    if ($preferences.sequential) {
+        let audio = new Audio(soundPath);
+        
+        currentAudio.forEach((sound) => {
+            sound.pause();
+            sound.currentTime = 0;
+        });
 
-    onMount(async () => {
-        unlisten = await listen('keypress', (event) => {
-            let pressedKey = (event.payload as Payload).key_pressed;
-            console.log(`Key down: ${pressedKey}`);
+        currentAudio = [audio];
 
-            if (!forbiddenKeybindKeys.includes(pressedKey)) {
-                keysPressed[pressedKey] = true;
-            } else {
-                if (settingKeybind) {
-                    if (pressedKey === "Escape") {
-                        // do escape stuff
-                        stopRecordingKeybind();
-                    } else if (pressedKey === "Enter" || pressedKey == "NumpadEnter") {
-                        // save keybind
-                        if (tempHeldKeys.length) {
-                            if (saveKeybind()) {
-                                stopRecordingKeybind();
-                            }
+        audio.play();
+    } else {
+        let audio = new Audio(soundPath);
+        audio.play();
+
+        audio.onended = function () {
+            let index = currentAudio.indexOf(audio);
+            currentAudio.splice(index, 1);
+        };
+
+        currentAudio.push(audio);
+    }
+}
+
+const addKeybind = async (uuid: string): Promise<void> => {
+    playingSoundboard = false;
+    settingKeybind = uuid;
+};
+
+$: registeredKeybinds = $preferences.sounds
+    .filter((x) => x.keybind !== undefined && x.keybind !== null)
+    .map((x) => ({
+        uuid: x.uuid,
+        path: x.path,
+        keybind: deserialiseKeybind(x.keybind)
+    }));
+
+onMount(async () => {
+    unlisten = await listen('keypress', (event) => {
+        let pressedKey = (event.payload as Payload).key_pressed;
+
+        if (!forbiddenKeybindKeys.includes(pressedKey)) {
+            keysPressed[pressedKey] = true;
+        } else {
+            if (settingKeybind) {
+                if (pressedKey === "Escape") {
+                    // do escape stuff
+                    stopRecordingKeybind();
+                } else if (pressedKey === "Enter" || pressedKey == "NumpadEnter") {
+                    // save keybind
+                    if (tempHeldKeys.length) {
+                        if (saveKeybind()) {
+                            stopRecordingKeybind();
                         }
                     }
                 }
             }
-        })
-
-        unlisten2 = await listen('keyup', (event) => {
-            let pressedKey = (event.payload as Payload).key_pressed;
-
-            if (pressedKey in keysPressed) {
-                keysPressed[pressedKey] = false;
-            }
-        })
-    });
-
-    onDestroy(() => {
-        if (unlisten) {
-            unlisten();
-        }
-
-        if (unlisten2) {
-            unlisten2();
         }
     })
 
-    // Debouncing mechanism
-    let val = [];
-    let timer;
+    unlisten2 = await listen('keyup', (event) => {
+        let pressedKey = (event.payload as Payload).key_pressed;
 
-    const debounce = (v) => {
-        if (settingKeybind) {
-            clearTimeout(timer);
-            timer = setTimeout(() => {
-                val = v;
-            }, 10);
-        } else {
+        if (pressedKey in keysPressed) {
+            keysPressed[pressedKey] = false;
+        }
+    })
+});
+
+onDestroy(() => {
+    if (unlisten) {
+        unlisten();
+    }
+
+    if (unlisten2) {
+        unlisten2();
+    }
+})
+
+// Debouncing mechanism
+let val = [];
+let timer;
+
+const debounce = (v) => {
+    if (settingKeybind) {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
             val = v;
+        }, 10);
+    } else {
+        val = v;
+    }
+};
+
+let tempHeldKeys = [];
+
+const handleKeyPresses = (heldKeys: string[]) => {
+    if (!heldKeys.length) {
+        return;
+    }
+
+    if (settingKeybind) {
+        tempHeldKeys = heldKeys;
+    } else {
+        let keybindExists = registeredKeybinds.filter(
+            (x) => x.keybind && arraysEqual(x.keybind.sort(), heldKeys.sort())
+        );
+
+        if (keybindExists.length) {
+            playSound(keybindExists[0].path);
         }
-    };
+    }
+};
 
-    let tempHeldKeys = [];
+const saveKeybind = (): boolean => {
+    if (settingKeybind) {
+        let newKeybindKeys = tempHeldKeys.sort();
 
-    const handleKeyPresses = (heldKeys: string[]) => {
-        if (!heldKeys.length) {
-            return;
-        }
-
-        if (settingKeybind) {
-            tempHeldKeys = heldKeys;
+        if (
+            registeredKeybinds
+                .filter((x) => x.uuid !== settingKeybind)
+                .map((x) => x.keybind)
+                .filter((x) => x && arraysEqual(x.sort(), newKeybindKeys)).length
+        ) {
+            return false;
         } else {
-            let keybindExists = registeredKeybinds.filter(
-                (x) => x.keybind && arraysEqual(x.keybind.sort(), heldKeys.sort())
-            );
+            let indexOfItemToChange = $preferences.sounds.findIndex((x) => x.uuid == settingKeybind);
 
-            if (keybindExists.length) {
-                playSound(keybindExists[0].path);
-            }
+            preferences.update((preferences) => {
+                preferences.sounds[indexOfItemToChange].keybind = serialiseKeybind(newKeybindKeys);
+                return preferences
+            });
+            
+            console.debug(`Saved ${serialiseKeybind(newKeybindKeys)} for ${settingKeybind}`);
+            return true;
         }
-    };
+    }
+};
 
-    const saveKeybind = (): boolean => {
-        if (settingKeybind) {
-            let newKeybindKeys = tempHeldKeys.sort();
+const stopRecordingKeybind = (): void => {
+    settingKeybind = "";
+    tempHeldKeys = [];
+    playingSoundboard = true;
+};
 
-            if (
-                registeredKeybinds
-                    .filter((x) => x.uuid !== settingKeybind)
-                    .map((x) => x.keybind)
-                    .filter((x) => x && arraysEqual(x.sort(), newKeybindKeys)).length
-            ) {
-                alert("Keybind already set");
-                return false;
-            } else {
-                let indexOfItemToChange = $preferences.sounds.findIndex((x) => x.uuid == settingKeybind);
-
-                preferences.update((preferences) => {
-                    preferences.sounds[indexOfItemToChange].keybind = serialiseKeybind(newKeybindKeys);
-                    return preferences
-                });
-                
-                console.debug(`Saved ${serialiseKeybind(newKeybindKeys)} for ${settingKeybind}`);
-                return true;
-            }
-        }
-    };
-
-    const stopRecordingKeybind = (): void => {
-        settingKeybind = "";
-        tempHeldKeys = [];
-        playingSoundboard = true;
-    };
-
-    const getDisplay = (uuid: string, heldKeys: string, keybind: string): string => {
-        if (settingKeybind !== uuid) {
-            if (keybind) {
-                return keybindText(deserialiseKeybind(keybind));
-            } else {
-                return "Add keybind";
-            }
+const getDisplay = (uuid: string, heldKeys: string, keybind: string): string => {
+    if (settingKeybind !== uuid) {
+        if (keybind) {
+            return keybindText(deserialiseKeybind(keybind));
         } else {
-            if (heldKeys) {
-                return heldKeys;
-            } else {
-                return "...";
-            }
+            return "Add keybind";
         }
-    };
+    } else {
+        if (heldKeys) {
+            return heldKeys;
+        } else {
+            return "...";
+        }
+    }
+};
 
-    // The following are special keys with special functionality and therefore cannot be used for keybinds
-    let forbiddenKeybindKeys = ["Escape", "Enter", "NumpadEnter"];
+// The following are special keys with special functionality and therefore cannot be used for keybinds
+let forbiddenKeybindKeys = ["Escape", "Enter", "NumpadEnter"];
 
-    $: debounce(Object.keys(keysPressed).filter((x) => keysPressed[x] === true));
-    $: handleKeyPresses(val);
+$: debounce(Object.keys(keysPressed).filter((x) => keysPressed[x] === true));
+$: handleKeyPresses(val);
 </script>
 
-<svelte:window on:click={() => saveKeybind()} />
+<svelte:window on:click|self={() => stopRecordingKeybind()} class="{$preferences.darkmode ? 'dark-theme' : 'light-theme'}" />
 
 <main class="w-full h-screen bg-blue-100 dark:bg-dark flex flex-col">
     <div class="h-[100px] flex justify-between p-8 items-center">
@@ -275,6 +258,7 @@
         <div class="flex items-center gap-x-3">
             <button
                 class="keyboard-button flex justify-center items-center"
+                title={$preferences.sequential ? 'Switch to sequential mode' : 'Switch to chaos mode'}
                 on:click={() => {
                     changePlaymode();
                 }}
@@ -287,6 +271,7 @@
             </button>
             <button
                 class="keyboard-button flex justify-center items-center"
+                title={$preferences.darkmode ? 'Switch to dark mode' : 'Switch to light mode'}
                 on:click={() => {
                     changeTheme();
                 }}
@@ -294,7 +279,7 @@
                 {#if $preferences.darkmode}
                     <InlineSVG src="sun.svg" />
                 {:else}
-                    <InlineSVG src="moon.svg" />
+                    <InlineSVG src="moon.svg"/>
                 {/if}
             </button>
         </div>
@@ -302,6 +287,12 @@
     <div class="flex p-10 gap-8">
         {#each $preferences.sounds as sound}
             {#if sound.uuid && sound.path}
+                {@const display = getDisplay(sound.uuid, keybindText(tempHeldKeys), sound.keybind)}
+                {@const newKeybindKeys = tempHeldKeys.sort()}
+                {@const canRegisterKeybind = registeredKeybinds
+                    .filter((x) => x.uuid !== settingKeybind)
+                    .map((x) => x.keybind)
+                    .filter((x) => x && arraysEqual(x.sort(), newKeybindKeys)).length <= 0}
                 <button
                     id={sound.uuid}
                     class="flex flex-col justify-between w-[140px] border border-black rounded-lg h-[160px] p-2 bg-white shadow-xl cursor-pointer hover:shadow-none active:bg-gray-100"
@@ -316,21 +307,24 @@
                         {sound.path.replace(/^.*[\\\/]/, "")}
                     </span>
                     <div class="flex w-full gap-1">
-                        <button
-                            class="keybind-text bg-gray-800 text-white rounded w-full py-1 text-sm active:outline-none text-ellipsis overflow-hidden"
-                            on:click={() => {
-                                stopRecordingKeybind();
-                                addKeybind(sound.uuid);
-                            }}
-                            on:keydown={(e) => {
-                                if (e.key == "Enter") {
-                                    e.preventDefault();
-                                }
-                            }}
-                            title={getDisplay(sound.uuid, keybindText(tempHeldKeys), sound.keybind)}
-                        >
-                            {getDisplay(sound.uuid, keybindText(tempHeldKeys), sound.keybind)}
-                        </button>
+                        <div class="flex flex-col-reverse w-full overflow-hidden">
+                            <button
+                                class="keybind-text bg-gray-800 text-white rounded py-1 text-sm active:outline-none text-ellipsis z-20 {!canRegisterKeybind ? 'outline-red-400' : ''}"
+                                on:click={() => {
+                                    stopRecordingKeybind();
+                                    addKeybind(sound.uuid);
+                                }}
+                                on:keydown={(e) => {
+                                    if (e.key == "Enter") {
+                                        e.preventDefault();
+                                    }
+                                }}
+                                title={display}
+                            >
+                                {display}
+                            </button>
+                            <span class="{settingKeybind === sound.uuid ? !canRegisterKeybind ? 'show-fail' : keybindText(tempHeldKeys) ? 'show-enter' : '' : ''}"></span>
+                        </div>
                         <button
                             on:click={() => {
                                 deleteSound(sound.uuid);
@@ -351,63 +345,78 @@
     </div>
 </main>
 
-<style lang="scss">
-    $button-size: 64px;
-    $button-size-active: 70px;
+<style lang="scss" global>
+$button-size: 64px;
+$button-size-active: 70px;
 
-    .keyboard-button {
-        background: radial-gradient(circle, #292929 0%, #131615 50%);
-        height: $button-size;
-        aspect-ratio: 1/1;
-        border-radius: 100%;
+.show-enter, .show-fail {
+    transition: transform 0.2s linear;
+    transform: translateY(-10px);
+
+    &::after {
+        transform: translateY(10px);
+        content: "Press Enter";
         position: relative;
-        z-index: 1;
-        transform-style: preserve-3d;
-        border: none;
-        color: white;
-        cursor: pointer;
-        margin: calc($button-size / 8);
+        font-size: 10px;
+        background: white;
+        color: black;
+        display: block;
+        border: 1px solid black;
+        border-top-right-radius: 5px;
+        border-top-left-radius: 5px;
+    }
+}
 
-        i {
-            font-size: calc($button-size / 2);
-            background: -webkit-radial-gradient(circle, white, #f1f2f4);
-            -webkit-background-clip: text;
-            background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 4px white;
-        }
+.show-fail {
+    &::after {
+        content: "Already used";
+    }
+}
 
-        &:hover {
-            background: radial-gradient(circle, #2d2d2d 0%, #191919 50%);
-        }
+.keyboard-button {
+    background: radial-gradient(circle, #292929 0%, #131615 50%);
+    height: $button-size;
+    aspect-ratio: 1/1;
+    border-radius: 100%;
+    position: relative;
+    z-index: 1;
+    transform-style: preserve-3d;
+    border: none;
+    color: white;
+    cursor: pointer;
+    margin: calc($button-size / 8);
 
-        &:active {
-            height: 70px;
-            margin: 5px;
+    svg:focus {
+        outline: none;
+    }
 
-            i {
-                font-size: calc($button-size / 2) - 1px;
-            }
+    &:hover {
+        background: radial-gradient(circle, #2d2d2d 0%, #191919 50%);
+    }
 
-            &::after {
-                left: -5px;
-                top: -5px;
-                width: calc(100% + 10px);
-                height: calc(100% + 10px);
-            }
-        }
+    &:active {
+        height: 70px;
+        margin: 5px;
 
         &::after {
-            content: "";
-            position: absolute;
-            left: calc(-#{$button-size} / 8);
-            top: calc(-#{$button-size} / 8);
-            width: calc(100% + ((#{$button-size} / 8) * 2));
-            height: calc(100% + ((#{$button-size} / 8) * 2));
-            background: linear-gradient(to right, #050a09, #242625);
-            border-radius: 100%;
-            transform: translateZ(-1px);
-            outline: 1px solid black;
+            left: -5px;
+            top: -5px;
+            width: calc(100% + 10px);
+            height: calc(100% + 10px);
         }
     }
+
+    &::after {
+        content: "";
+        position: absolute;
+        left: calc(-#{$button-size} / 8);
+        top: calc(-#{$button-size} / 8);
+        width: calc(100% + ((#{$button-size} / 8) * 2));
+        height: calc(100% + ((#{$button-size} / 8) * 2));
+        background: linear-gradient(to right, #050a09, #242625);
+        border-radius: 100%;
+        transform: translateZ(-1px);
+        outline: 1px solid black;
+    }
+}
 </style>
