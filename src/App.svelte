@@ -13,15 +13,12 @@ type Payload = {
 }
 
 // List of currently playing audio for chaos mode
-let currentAudio = [];
+let currentAudio: HTMLAudioElement[] = [];
 
 // Currently held keys
-let keysPressed = {};
+let keysPressed: Record<string, boolean> = {};
 
-// Playing soundboard is true when not editing keybinds
-let playingSoundboard = true;
-
-let settingKeybind = "";
+let settingKeybindForSound = "";
 
 let unlisten: UnlistenFn;
 let unlisten2: UnlistenFn;
@@ -50,6 +47,10 @@ const addNewSound = async (): Promise<void> => {
     }).then((result) => {
         let uuid = uuidv4();
         let soundPath = "";
+
+        if (!result) {
+            return;
+        }
 
         if (Array.isArray(result)) {
             soundPath = result[0];
@@ -106,11 +107,6 @@ function playSound(soundPath: string): void {
     }
 }
 
-const addKeybind = async (uuid: string): Promise<void> => {
-    playingSoundboard = false;
-    settingKeybind = uuid;
-};
-
 $: registeredKeybinds = $preferences.sounds
     .filter((x) => x.keybind !== undefined && x.keybind !== null)
     .map((x) => ({
@@ -126,7 +122,7 @@ onMount(async () => {
         if (!forbiddenKeybindKeys.includes(pressedKey)) {
             keysPressed[pressedKey] = true;
         } else {
-            if (settingKeybind) {
+            if (settingKeybindForSound) {
                 if (pressedKey === "Escape") {
                     // do escape stuff
                     stopRecordingKeybind();
@@ -162,11 +158,11 @@ onDestroy(() => {
 })
 
 // Debouncing mechanism
-let val = [];
-let timer;
+let val: string[] = [];
+let timer: NodeJS.Timeout;
 
-const debounce = (v) => {
-    if (settingKeybind) {
+const debounce = (v: string[]) => {
+    if (settingKeybindForSound) {
         clearTimeout(timer);
         timer = setTimeout(() => {
             val = v;
@@ -176,14 +172,14 @@ const debounce = (v) => {
     }
 };
 
-let tempHeldKeys = [];
+let tempHeldKeys: string[] = [];
 
 const handleKeyPresses = (heldKeys: string[]) => {
     if (!heldKeys.length) {
         return;
     }
 
-    if (settingKeybind) {
+    if (settingKeybindForSound) {
         tempHeldKeys = heldKeys;
     } else {
         let keybindExists = registeredKeybinds.filter(
@@ -197,38 +193,39 @@ const handleKeyPresses = (heldKeys: string[]) => {
 };
 
 const saveKeybind = (): boolean => {
-    if (settingKeybind) {
+    if (settingKeybindForSound) {
         let newKeybindKeys = tempHeldKeys.sort();
 
         if (
             registeredKeybinds
-                .filter((x) => x.uuid !== settingKeybind)
+                .filter((x) => x.uuid !== settingKeybindForSound)
                 .map((x) => x.keybind)
                 .filter((x) => x && arraysEqual(x.sort(), newKeybindKeys)).length
         ) {
             return false;
         } else {
-            let indexOfItemToChange = $preferences.sounds.findIndex((x) => x.uuid == settingKeybind);
+            let indexOfItemToChange = $preferences.sounds.findIndex((x) => x.uuid == settingKeybindForSound);
 
             preferences.update((preferences) => {
                 preferences.sounds[indexOfItemToChange].keybind = serialiseKeybind(newKeybindKeys);
                 return preferences
             });
             
-            console.debug(`Saved ${serialiseKeybind(newKeybindKeys)} for ${settingKeybind}`);
+            console.debug(`Saved ${serialiseKeybind(newKeybindKeys)} for ${settingKeybindForSound}`);
             return true;
         }
     }
+
+    return false;
 };
 
 const stopRecordingKeybind = (): void => {
-    settingKeybind = "";
+    settingKeybindForSound = "";
     tempHeldKeys = [];
-    playingSoundboard = true;
 };
 
-const getDisplay = (uuid: string, heldKeys: string, keybind: string): string => {
-    if (settingKeybind !== uuid) {
+const getDisplay = (uuid: string, heldKeys: string, keybind?: string): string => {
+    if (settingKeybindForSound !== uuid) {
         if (keybind) {
             return keybindText(deserialiseKeybind(keybind));
         } else {
@@ -290,7 +287,7 @@ $: handleKeyPresses(val);
                 {@const display = getDisplay(sound.uuid, keybindText(tempHeldKeys), sound.keybind)}
                 {@const newKeybindKeys = tempHeldKeys.sort()}
                 {@const canRegisterKeybind = registeredKeybinds
-                    .filter((x) => x.uuid !== settingKeybind)
+                    .filter((x) => x.uuid !== settingKeybindForSound)
                     .map((x) => x.keybind)
                     .filter((x) => x && arraysEqual(x.sort(), newKeybindKeys)).length <= 0}
                 <button
@@ -312,7 +309,7 @@ $: handleKeyPresses(val);
                                 class="keybind-text bg-gray-800 text-white rounded py-1 text-sm active:outline-none text-ellipsis z-20 {!canRegisterKeybind ? 'outline-red-400' : ''}"
                                 on:click={() => {
                                     stopRecordingKeybind();
-                                    addKeybind(sound.uuid);
+                                    settingKeybindForSound = sound.uuid;
                                 }}
                                 on:keydown={(e) => {
                                     if (e.key == "Enter") {
@@ -323,7 +320,7 @@ $: handleKeyPresses(val);
                             >
                                 {display}
                             </button>
-                            <span class="{settingKeybind === sound.uuid ? !canRegisterKeybind ? 'show-fail' : keybindText(tempHeldKeys) ? 'show-enter' : '' : ''}"></span>
+                            <span class="{settingKeybindForSound === sound.uuid ? !canRegisterKeybind ? 'show-fail' : keybindText(tempHeldKeys) ? 'show-enter' : '' : ''}"></span>
                         </div>
                         <button
                             on:click={() => {

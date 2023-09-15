@@ -1,5 +1,5 @@
 // Utility method to check if arrays are equal
-const arraysEqual = (a, b) => {
+const arraysEqual = <T>(a: Array<T>, b: Array<T>) => {
     if (a === b) return true;
     if (a == null || b == null) return false;
     if (a.length !== b.length) return false;
@@ -16,7 +16,11 @@ const keybindText = (keyParts: string[]): string => {
 };
 
 // Splits the keybind parts to get a string representation of keybind parts (KeyG~~KeyA -> [KeyG, KeyA])
-const deserialiseKeybind = (keybind: string): Array<string> => {
+const deserialiseKeybind = (keybind: string | undefined): Array<string> => {
+    if (!keybind) {
+        return [];
+    }
+
     return keybind.split("~~");
 };
 
