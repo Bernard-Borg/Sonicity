@@ -5,11 +5,11 @@ A soundboard app similar to Voicemod, but free - previously created as a project
 
 The interface is quite simple;
 
-You can add new sounds by clicking the + button.
-You can delete sounds by clicking on the trash can.
-You can set keybinds by clicking on "Add keybind" under the sound.
-You can change the playback mode (chaos mode - play multiple sounds at the same time or sequential - when playing a sound, stop all previous ones).
-You can change the app theme (light mode or dark mode).
+- You can add new sounds by clicking the + button.
+- You can delete sounds by clicking on the trash can.
+- You can set keybinds by clicking on "Add keybind" under the sound.
+- You can change the playback mode (chaos mode - play multiple sounds at the same time or sequential - when playing a sound, stop all previous ones).
+- You can change the app theme (light mode or dark mode).
 
 ## App screenshot
 
