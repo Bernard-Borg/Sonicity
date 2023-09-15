@@ -7,7 +7,8 @@ The interface is quite simple;
 
 You can add new sounds by clicking the + button.
 You can delete sounds by clicking on the trash can.
-You can set keybinds (don't set Ctrl+I since this opens the Dev tools) by clicking on "Add keybind" under the sound.
+You can set keybinds by clicking on "Add keybind" under the sound.
+You can change the playback mode (chaos mode - play multiple sounds at the same time or sequential - when playing a sound, stop all previous ones).
 You can change the app theme (light mode or dark mode).
 
 ## App screenshot
@@ -16,4 +17,4 @@ You can change the app theme (light mode or dark mode).
 
 ## Other notes
 
-Currently trying to make the sound work while the app is not focused (through rust).
+I have no idea how to create drivers to be able to stream the audio through a microphone, but I will try my best.
