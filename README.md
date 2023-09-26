@@ -15,6 +15,15 @@ The interface is quite simple;
 
 ![app screenshot](https://github.com/Bernard-Borg/SoundboardApp/assets/35971384/02f34d1e-5588-45bc-aef1-5a4f68e99ac0)
 
+## Further improvements
+
+Currently thinking about;
+
+- Renaming clips
+- Renaming the application
+- Adding an icon
+- Playing sound through rust rather than JavaScript (which would allow you to switch device to play sound in, possibly supporting existing virtual microphones)
+
 ## Other notes
 
 I have no idea how to create drivers to be able to stream the audio through a microphone, but I will try my best.
