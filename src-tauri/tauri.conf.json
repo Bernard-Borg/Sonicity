@@ -58,13 +58,14 @@
             {
                 "label": "main",
                 "center": true,
-                "fullscreen": true,
+                "fullscreen": false,
                 "resizable": true,
                 "title": "Sonicity",
                 "width": 1920,
                 "height": 1080,
                 "minHeight": 480,
-                "minWidth": 480
+                "minWidth": 480,
+                "decorations": true
             }
         ]
     }

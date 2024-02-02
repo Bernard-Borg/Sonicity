@@ -5,6 +5,8 @@
 
 use device_query::{DeviceEvents, DeviceState};
 use tauri::Manager;
+use cpal::traits::{DeviceTrait,HostTrait};
+use cpal::{InputDevices,Devices};
 
 #[derive(Clone, serde::Serialize)]
 struct Payload {
@@ -12,6 +14,16 @@ struct Payload {
 }
 
 fn main() {
+    let all_output_devices: Vec<InputDevices<Devices>> = cpal::available_hosts()
+    .iter()
+    .map(|host_id| cpal::host_from_id(*host_id).unwrap().input_devices().unwrap())
+    .collect();
+
+    let output_devices = all_output_devices.into_iter().next().unwrap();
+
+    println!("Hosts:");
+    output_devices.into_iter().for_each(|x| { println!("{}", x.name().unwrap())});
+
     tauri::Builder::default()
         .setup(|app| {
             let app_handle = app.app_handle();
