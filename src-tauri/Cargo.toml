@@ -1,10 +1,10 @@
 [package]
-name = "soundboard-app"
+name = "sonicity"
 version = "0.0.1"
 description = "A Soundboard App built using Tauri-Svelte"
 authors = ["Bernard-Borg"]
 license = "GNU GPLv3"
-repository = "https://github.com/Bernard-Borg/SoundboardApp"
+repository = "https://github.com/Bernard-Borg/Sonicity"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

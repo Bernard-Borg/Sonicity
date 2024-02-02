@@ -7,14 +7,14 @@
         "withGlobalTauri": false
     },
     "package": {
-        "productName": "soundboard-app-tauri",
+        "productName": "sonicity",
         "version": "0.0.1"
     },
     "tauri": {
         "allowlist": {
             "fs": {
                 "all": true,
-                "scope": ["$APPDATA", "$APPDATA/*", "$APPDATA/soundboard-app-tauri/*"]
+                "scope": ["$APPDATA", "$APPDATA/*", "$APPDATA/sonicity/*"]
             },
             "path": {
                 "all": true
@@ -47,7 +47,7 @@
                 "icons/icon.icns",
                 "icons/icon.ico"
             ],
-            "identifier": "soundboard-app",
+            "identifier": "sonicity",
             "longDescription": "",
             "macOS": {
                 "entitlements": null,
@@ -76,7 +76,7 @@
                 "fullscreen": false,
                 "height": 600,
                 "resizable": true,
-                "title": "Soundboard App",
+                "title": "Sonicity",
                 "width": 800
             }
         ]
