@@ -1,4 +1,4 @@
-# SoundboardApp
+# Sonicity
 A soundboard app similar to Voicemod, but free - previously created as a project to learn ElectronJS and NodeJS with. It has now been rebuilt with [Tauri](https://tauri.app/), Svelte and TailwindCSS as a way to reduce the app's size, and learn those technologies.
 
 ## Features
@@ -20,8 +20,6 @@ The interface is quite simple;
 Currently thinking about;
 
 - Renaming clips
-- Renaming the application
-- Adding an icon
 - Playing sound through rust rather than JavaScript (which would allow you to switch device to play sound in, possibly supporting existing virtual microphones)
 
 ## Other notes
