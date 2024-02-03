@@ -1,6 +1,6 @@
 [package]
 name = "sonicity"
-version = "0.0.1"
+version = "0.0.2"
 description = "A Soundboard App built using Tauri-Svelte"
 authors = ["Bernard-Borg"]
 license = "GNU GPLv3"

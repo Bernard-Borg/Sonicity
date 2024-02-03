@@ -3,27 +3,48 @@
     windows_subsystem = "windows"
 )]
 
+use std::collections::HashMap;
+
 use device_query::{DeviceEvents, DeviceState};
 use tauri::Manager;
 use cpal::traits::{DeviceTrait,HostTrait};
-use cpal::{InputDevices,Devices};
+use cpal::Device;
 
 #[derive(Clone, serde::Serialize)]
 struct Payload {
     key_pressed: String
 }
 
+#[tauri::command]
+fn list_audio_devices(_handle: tauri::AppHandle, input: bool) -> (HashMap<String, Vec<String>>, String) {
+    let mut devices = HashMap::new();
+    let hosts = cpal::available_hosts().into_iter();
+
+    _ = hosts.map(|host_id| {
+        let hostname = host_id.name().to_string();
+        let host = cpal::host_from_id(host_id).expect("No hosts found");
+        
+        let host_devices;
+
+        if input {
+            host_devices = host.input_devices()
+                .unwrap()
+                .map(|x: Device| x.name().unwrap())
+                .collect();
+        } else {
+            host_devices = host.output_devices()
+                .unwrap()
+                .map(|x: Device| x.name().unwrap())
+                .collect();
+        }
+
+        devices.insert(hostname, host_devices);
+    }).collect::<Vec<_>>();
+
+    return (devices, cpal::default_host().id().name().to_string());
+}
+
 fn main() {
-    let all_output_devices: Vec<InputDevices<Devices>> = cpal::available_hosts()
-    .iter()
-    .map(|host_id| cpal::host_from_id(*host_id).unwrap().input_devices().unwrap())
-    .collect();
-
-    let output_devices = all_output_devices.into_iter().next().unwrap();
-
-    println!("Hosts:");
-    output_devices.into_iter().for_each(|x| { println!("{}", x.name().unwrap())});
-
     tauri::Builder::default()
         .setup(|app| {
             let app_handle = app.app_handle();
@@ -45,6 +66,9 @@ fn main() {
 
             Ok(())
         })
+        .invoke_handler(tauri::generate_handler![
+            list_audio_devices
+        ])
         .run(tauri::generate_context!("./dist"))
         .expect("error while running tauri application");
 }

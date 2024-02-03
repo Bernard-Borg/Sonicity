@@ -1,7 +1,7 @@
 <script lang="ts">
 import { deserialiseKeybind, serialiseKeybind, keybindText, arraysEqual } from "./utils";
 import { open } from "@tauri-apps/api/dialog";
-import { convertFileSrc } from "@tauri-apps/api/tauri";
+import { convertFileSrc, invoke } from "@tauri-apps/api/tauri";
 import { onDestroy, onMount } from "svelte";
 import { v4 as uuidv4 } from "uuid";
 import InlineSVG from "svelte-inline-svg";
@@ -11,6 +11,11 @@ import { preferences } from "./stores/preferences";
 type Payload = {
     key_pressed: string;
 }
+
+type AudioDevices = { 
+    "0": Record<string, Array<string>>; 
+    "1": String;
+};
 
 // List of currently playing audio for chaos mode
 let currentAudio: HTMLAudioElement[] = [];
@@ -23,6 +28,9 @@ let forbiddenKeybindKeys = ["Escape", "Enter", "NumpadEnter"];
 
 // Stores the UUID of the sound that the user is setting a keybind for
 let settingKeybindForSound = "";
+
+// Stores the audio devices list
+let devices: string[] = [];
 
 let unlisten: UnlistenFn;
 let unlisten2: UnlistenFn;
@@ -171,6 +179,14 @@ onMount(async () => {
             keysPressed[pressedKey] = false;
         }
     })
+
+    // Get device list
+    devices = await invoke("list_audio_devices", {
+        input: true
+    }).then((result) => {
+        let typedResult = result as AudioDevices;
+        return Object.entries(typedResult[0]).flatMap(([key, val]) => val.map(x => `${key}: ${x}`));
+    });
 });
 
 // Destroy event listeners when the component is destroyed
@@ -270,6 +286,10 @@ const getDisplay = (uuid: string, heldKeys: string, keybind?: string): string =>
     }
 };
 
+const openSettings = () => {
+    console.log("Settings to be implemented");
+}
+
 $: debounce(Object.keys(keysPressed).filter((x) => keysPressed[x] === true));
 $: handleKeyPresses(val);
 </script>
@@ -306,6 +326,15 @@ $: handleKeyPresses(val);
                 {:else}
                     <InlineSVG src="moon.svg"/>
                 {/if}
+            </button>
+            <button
+                class="keyboard-button flex justify-center items-center"
+                title={$preferences.sequential ? 'Switch to sequential mode' : 'Switch to chaos mode'}
+                on:click={() => {
+                    openSettings();
+                }}
+            >
+                <InlineSVG src="settings.svg" />
             </button>
         </div>
     </div>
@@ -368,11 +397,12 @@ $: handleKeyPresses(val);
             }}><InlineSVG src="plus.svg" /></button
         >
     </div>
+
 </main>
 
 <style lang="scss" global>
-$button-size: 64px;
-$button-size-active: 70px;
+$button-size: 48px;
+$button-size-active: 52px;
 
 .show-enter, .show-fail {
     transition: transform 0.2s linear;
@@ -399,7 +429,8 @@ $button-size-active: 70px;
 }
 
 .keyboard-button {
-    background: radial-gradient(circle, #292929 0%, #131615 50%);
+    background: radial-gradient(circle, #e7e7e7, #e6e6e6 50%);
+    color: #0044b0;
     height: $button-size;
     aspect-ratio: 1/1;
     border-radius: 100%;
@@ -407,7 +438,6 @@ $button-size-active: 70px;
     z-index: 1;
     transform-style: preserve-3d;
     border: none;
-    color: white;
     cursor: pointer;
     margin: calc($button-size / 8);
 
@@ -416,12 +446,12 @@ $button-size-active: 70px;
     }
 
     &:hover {
-        background: radial-gradient(circle, #2d2d2d 0%, #191919 50%);
+        background: radial-gradient(circle, #e2e2e2, #dfdfdf 50%);
     }
 
     &:active {
-        height: 70px;
-        margin: 5px;
+        height: $button-size-active;
+        margin: calc($button-size-active - $button-size);
 
         &::after {
             left: -5px;
@@ -438,10 +468,25 @@ $button-size-active: 70px;
         top: calc(-#{$button-size} / 8);
         width: calc(100% + ((#{$button-size} / 8) * 2));
         height: calc(100% + ((#{$button-size} / 8) * 2));
-        background: linear-gradient(to right, #050a09, #242625);
+        background: linear-gradient(to right, #c6c7c7, #e2e2e2);
         border-radius: 100%;
         transform: translateZ(-1px);
         outline: 1px solid black;
+    }
+}
+
+html.dark-theme {
+    .keyboard-button {
+        background: radial-gradient(circle, #292929 0%, #131615 50%);
+        color: white;
+
+        &:hover {
+            background: radial-gradient(circle, #2d2d2d 0%, #191919 50%);
+        }
+
+        &::after {
+            background: linear-gradient(to right, #050a09, #242625);
+        }
     }
 }
 </style>
