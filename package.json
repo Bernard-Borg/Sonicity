@@ -18,10 +18,10 @@
         "uuid": "^10.0.0"
     },
     "devDependencies": {
-        "@sveltejs/vite-plugin-svelte": "3.1.2",
+        "@sveltejs/vite-plugin-svelte": "2.5.3",
         "@tauri-apps/cli": "^1.6.1",
         "@tsconfig/svelte": "^5.0.4",
-        "@types/node": "^18.7.10",
+        "@types/node": "^18.19.46",
         "@types/uuid": "^10.0.0",
         "autoprefixer": "^10.4.20",
         "postcss": "^8.4.41",
@@ -33,7 +33,7 @@
         "svelte-preprocess": "^6.0.2",
         "tailwindcss": "^3.4.1",
         "tslib": "^2.7.0",
-        "typescript": "^5.2.0",
+        "typescript": "^5.5.4",
         "vite": "5.4.2"
     },
     "packageManager": "yarn@4.4.1"
