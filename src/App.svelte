@@ -5,7 +5,7 @@ import { convertFileSrc, invoke } from "@tauri-apps/api/tauri";
 import { onDestroy, onMount } from "svelte";
 import { v4 as uuidv4 } from "uuid";
 import InlineSVG from "svelte-inline-svg";
-import { listen, type UnlistenFn } from '@tauri-apps/api/event'
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { preferences } from "./stores/preferences";
 
 type Payload = {
@@ -187,6 +187,8 @@ onMount(async () => {
         let typedResult = result as AudioDevices;
         return Object.entries(typedResult[0]).flatMap(([key, val]) => val.map(x => `${key}: ${x}`));
     });
+
+    console.log(devices);
 });
 
 // Destroy event listeners when the component is destroyed
@@ -286,7 +288,13 @@ const getDisplay = (uuid: string, heldKeys: string, keybind?: string): string =>
     }
 };
 
-const openSettings = () => {
+const openSettings = async () => {
+    await invoke("play_audio", {
+        audioPath: "",
+        hostId: "1",
+        device: "Something"
+    });
+
     console.log("Settings to be implemented");
 }
 
