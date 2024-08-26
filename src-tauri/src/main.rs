@@ -3,10 +3,12 @@
     windows_subsystem = "windows"
 )]
 
+mod audio;
+use audio::AudioPlayer;
+use tauri::Manager;
 use std::collections::HashMap;
 
 use device_query::{DeviceEvents, DeviceState};
-use tauri::Manager;
 use cpal::traits::{DeviceTrait,HostTrait};
 use cpal::Device;
 
@@ -22,7 +24,7 @@ fn list_audio_devices(_handle: tauri::AppHandle, input: bool) -> (HashMap<String
 
     _ = hosts.map(|host_id| {
         let hostname = host_id.name().to_string();
-        let host = cpal::host_from_id(host_id).expect("No hosts found");
+        let host = cpal::host_from_id(host_id).expect("Host not found");
         
         let host_devices;
 
@@ -42,6 +44,41 @@ fn list_audio_devices(_handle: tauri::AppHandle, input: bool) -> (HashMap<String
     }).collect::<Vec<_>>();
 
     return (devices, cpal::default_host().id().name().to_string());
+}
+
+#[tauri::command]
+fn play_audio(_handle: tauri::AppHandle, _audio_path: String, host_id: String, device: String) -> () {
+    println!("Hi");
+    let selected_host_id = cpal::available_hosts().into_iter()
+        .find(|x| x.name() == host_id)
+        .expect("Host not found");
+
+    let selected_host = cpal::host_from_id(selected_host_id)
+        .expect(format!("Device {host_id} host is unavailable").as_str());
+
+    let device = selected_host.input_devices()
+        .expect("Unable to list host devices")
+        .find(|x| x.name().expect("Error getting device name") == device);
+
+    let output_device: Device;
+
+    if device.is_none() {
+        let default_device = selected_host.default_input_device();
+
+        if !default_device.is_none() {
+            output_device = default_device.unwrap();
+        } else {
+            panic!("No input device found");
+        }
+    } else {
+        output_device = device.unwrap();
+    }
+
+    let mut audio_player = AudioPlayer::new();
+    audio_player.set_playback_device(output_device).expect("An error occurred while switching playback device");
+    audio_player.play_audio("C:\\Users\\jokni\\Desktop\\is-wrong.mp3").expect("An error occured while playing audio");
+
+    return ();
 }
 
 fn main() {
@@ -67,7 +104,8 @@ fn main() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            list_audio_devices
+            list_audio_devices,
+            play_audio
         ])
         .run(tauri::generate_context!("./dist"))
         .expect("error while running tauri application");
