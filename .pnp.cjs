@@ -27,7 +27,7 @@ const RAW_RUNTIME_STATE =
       [null, {\
         "packageLocation": "./",\
         "packageDependencies": [\
-          ["@sveltejs/vite-plugin-svelte", "virtual:fdcb47caccfd3445e07507b6155aaf4e671d31c3a69659808895b9ec1f0d5fedfad52d76d73ec871d259675ce10bfbb10b403d80c9fb344439c7ab4f51e6c6cd#npm:3.1.2"],\
+          ["@sveltejs/vite-plugin-svelte", "virtual:fdcb47caccfd3445e07507b6155aaf4e671d31c3a69659808895b9ec1f0d5fedfad52d76d73ec871d259675ce10bfbb10b403d80c9fb344439c7ab4f51e6c6cd#npm:2.5.3"],\
           ["@tauri-apps/api", "npm:1.6.0"],\
           ["@tauri-apps/cli", "npm:1.6.1"],\
           ["@tsconfig/svelte", "npm:5.0.4"],\
@@ -654,18 +654,18 @@ const RAW_RUNTIME_STATE =
       }]\
     ]],\
     ["@sveltejs/vite-plugin-svelte", [\
-      ["npm:3.1.2", {\
-        "packageLocation": "../../AppData/Local/Yarn/Berry/cache/@sveltejs-vite-plugin-svelte-npm-3.1.2-d4a7bd51f4-10c0.zip/node_modules/@sveltejs/vite-plugin-svelte/",\
+      ["npm:2.5.3", {\
+        "packageLocation": "../../AppData/Local/Yarn/Berry/cache/@sveltejs-vite-plugin-svelte-npm-2.5.3-c2ae3d67e3-10c0.zip/node_modules/@sveltejs/vite-plugin-svelte/",\
         "packageDependencies": [\
-          ["@sveltejs/vite-plugin-svelte", "npm:3.1.2"]\
+          ["@sveltejs/vite-plugin-svelte", "npm:2.5.3"]\
         ],\
         "linkType": "SOFT"\
       }],\
-      ["virtual:fdcb47caccfd3445e07507b6155aaf4e671d31c3a69659808895b9ec1f0d5fedfad52d76d73ec871d259675ce10bfbb10b403d80c9fb344439c7ab4f51e6c6cd#npm:3.1.2", {\
-        "packageLocation": "./.yarn/__virtual__/@sveltejs-vite-plugin-svelte-virtual-0e67766709/3/AppData/Local/Yarn/Berry/cache/@sveltejs-vite-plugin-svelte-npm-3.1.2-d4a7bd51f4-10c0.zip/node_modules/@sveltejs/vite-plugin-svelte/",\
+      ["virtual:fdcb47caccfd3445e07507b6155aaf4e671d31c3a69659808895b9ec1f0d5fedfad52d76d73ec871d259675ce10bfbb10b403d80c9fb344439c7ab4f51e6c6cd#npm:2.5.3", {\
+        "packageLocation": "./.yarn/__virtual__/@sveltejs-vite-plugin-svelte-virtual-2d26458f94/3/AppData/Local/Yarn/Berry/cache/@sveltejs-vite-plugin-svelte-npm-2.5.3-c2ae3d67e3-10c0.zip/node_modules/@sveltejs/vite-plugin-svelte/",\
         "packageDependencies": [\
-          ["@sveltejs/vite-plugin-svelte", "virtual:fdcb47caccfd3445e07507b6155aaf4e671d31c3a69659808895b9ec1f0d5fedfad52d76d73ec871d259675ce10bfbb10b403d80c9fb344439c7ab4f51e6c6cd#npm:3.1.2"],\
-          ["@sveltejs/vite-plugin-svelte-inspector", "virtual:0e677667098a4cfe11271cb33264fc588f85c6d74ed4a8319e88d13a4731e965b4f1c35c36d13c75ea70b8a7b1c70bba2ca16296284a059f6f15f9d2feba37a8#npm:2.1.0"],\
+          ["@sveltejs/vite-plugin-svelte", "virtual:fdcb47caccfd3445e07507b6155aaf4e671d31c3a69659808895b9ec1f0d5fedfad52d76d73ec871d259675ce10bfbb10b403d80c9fb344439c7ab4f51e6c6cd#npm:2.5.3"],\
+          ["@sveltejs/vite-plugin-svelte-inspector", "virtual:2d26458f94bce64817a525b17fc0d10e6ba28b5f0e7f73f469b761a27b24374d017244252fea589d7028bb9a0316c21a61d79817dba0594054dc4acd96728e40#npm:1.0.4"],\
           ["@types/svelte", null],\
           ["@types/vite", null],\
           ["debug", "virtual:c9e1a4b59e37cb479517edede3bf2093b28c0ca1a9d0e517f3c345075bd1e468980b94b4957e389116607ee7155441dfd7d09e19a4229d5d09bcf06244401590#npm:4.3.6"],\
@@ -673,9 +673,9 @@ const RAW_RUNTIME_STATE =
           ["kleur", "npm:4.1.5"],\
           ["magic-string", "npm:0.30.11"],\
           ["svelte", "npm:4.2.19"],\
-          ["svelte-hmr", "virtual:0e677667098a4cfe11271cb33264fc588f85c6d74ed4a8319e88d13a4731e965b4f1c35c36d13c75ea70b8a7b1c70bba2ca16296284a059f6f15f9d2feba37a8#npm:0.16.0"],\
+          ["svelte-hmr", "virtual:2d26458f94bce64817a525b17fc0d10e6ba28b5f0e7f73f469b761a27b24374d017244252fea589d7028bb9a0316c21a61d79817dba0594054dc4acd96728e40#npm:0.15.3"],\
           ["vite", "virtual:fdcb47caccfd3445e07507b6155aaf4e671d31c3a69659808895b9ec1f0d5fedfad52d76d73ec871d259675ce10bfbb10b403d80c9fb344439c7ab4f51e6c6cd#npm:5.4.2"],\
-          ["vitefu", "virtual:0e677667098a4cfe11271cb33264fc588f85c6d74ed4a8319e88d13a4731e965b4f1c35c36d13c75ea70b8a7b1c70bba2ca16296284a059f6f15f9d2feba37a8#npm:0.2.5"]\
+          ["vitefu", "virtual:2d26458f94bce64817a525b17fc0d10e6ba28b5f0e7f73f469b761a27b24374d017244252fea589d7028bb9a0316c21a61d79817dba0594054dc4acd96728e40#npm:0.2.5"]\
         ],\
         "packagePeers": [\
           "@types/svelte",\
@@ -687,18 +687,18 @@ const RAW_RUNTIME_STATE =
       }]\
     ]],\
     ["@sveltejs/vite-plugin-svelte-inspector", [\
-      ["npm:2.1.0", {\
-        "packageLocation": "../../AppData/Local/Yarn/Berry/cache/@sveltejs-vite-plugin-svelte-inspector-npm-2.1.0-05740412e7-10c0.zip/node_modules/@sveltejs/vite-plugin-svelte-inspector/",\
+      ["npm:1.0.4", {\
+        "packageLocation": "../../AppData/Local/Yarn/Berry/cache/@sveltejs-vite-plugin-svelte-inspector-npm-1.0.4-c0c663ee18-10c0.zip/node_modules/@sveltejs/vite-plugin-svelte-inspector/",\
         "packageDependencies": [\
-          ["@sveltejs/vite-plugin-svelte-inspector", "npm:2.1.0"]\
+          ["@sveltejs/vite-plugin-svelte-inspector", "npm:1.0.4"]\
         ],\
         "linkType": "SOFT"\
       }],\
-      ["virtual:0e677667098a4cfe11271cb33264fc588f85c6d74ed4a8319e88d13a4731e965b4f1c35c36d13c75ea70b8a7b1c70bba2ca16296284a059f6f15f9d2feba37a8#npm:2.1.0", {\
-        "packageLocation": "./.yarn/__virtual__/@sveltejs-vite-plugin-svelte-inspector-virtual-4551d58260/3/AppData/Local/Yarn/Berry/cache/@sveltejs-vite-plugin-svelte-inspector-npm-2.1.0-05740412e7-10c0.zip/node_modules/@sveltejs/vite-plugin-svelte-inspector/",\
+      ["virtual:2d26458f94bce64817a525b17fc0d10e6ba28b5f0e7f73f469b761a27b24374d017244252fea589d7028bb9a0316c21a61d79817dba0594054dc4acd96728e40#npm:1.0.4", {\
+        "packageLocation": "./.yarn/__virtual__/@sveltejs-vite-plugin-svelte-inspector-virtual-7db602182e/3/AppData/Local/Yarn/Berry/cache/@sveltejs-vite-plugin-svelte-inspector-npm-1.0.4-c0c663ee18-10c0.zip/node_modules/@sveltejs/vite-plugin-svelte-inspector/",\
         "packageDependencies": [\
-          ["@sveltejs/vite-plugin-svelte-inspector", "virtual:0e677667098a4cfe11271cb33264fc588f85c6d74ed4a8319e88d13a4731e965b4f1c35c36d13c75ea70b8a7b1c70bba2ca16296284a059f6f15f9d2feba37a8#npm:2.1.0"],\
-          ["@sveltejs/vite-plugin-svelte", "virtual:fdcb47caccfd3445e07507b6155aaf4e671d31c3a69659808895b9ec1f0d5fedfad52d76d73ec871d259675ce10bfbb10b403d80c9fb344439c7ab4f51e6c6cd#npm:3.1.2"],\
+          ["@sveltejs/vite-plugin-svelte-inspector", "virtual:2d26458f94bce64817a525b17fc0d10e6ba28b5f0e7f73f469b761a27b24374d017244252fea589d7028bb9a0316c21a61d79817dba0594054dc4acd96728e40#npm:1.0.4"],\
+          ["@sveltejs/vite-plugin-svelte", "virtual:fdcb47caccfd3445e07507b6155aaf4e671d31c3a69659808895b9ec1f0d5fedfad52d76d73ec871d259675ce10bfbb10b403d80c9fb344439c7ab4f51e6c6cd#npm:2.5.3"],\
           ["@types/svelte", null],\
           ["@types/sveltejs__vite-plugin-svelte", null],\
           ["@types/vite", null],\
@@ -2916,7 +2916,7 @@ const RAW_RUNTIME_STATE =
         "packageLocation": "./",\
         "packageDependencies": [\
           ["sonicity", "workspace:."],\
-          ["@sveltejs/vite-plugin-svelte", "virtual:fdcb47caccfd3445e07507b6155aaf4e671d31c3a69659808895b9ec1f0d5fedfad52d76d73ec871d259675ce10bfbb10b403d80c9fb344439c7ab4f51e6c6cd#npm:3.1.2"],\
+          ["@sveltejs/vite-plugin-svelte", "virtual:fdcb47caccfd3445e07507b6155aaf4e671d31c3a69659808895b9ec1f0d5fedfad52d76d73ec871d259675ce10bfbb10b403d80c9fb344439c7ab4f51e6c6cd#npm:2.5.3"],\
           ["@tauri-apps/api", "npm:1.6.0"],\
           ["@tauri-apps/cli", "npm:1.6.1"],\
           ["@tsconfig/svelte", "npm:5.0.4"],\
@@ -3117,17 +3117,17 @@ const RAW_RUNTIME_STATE =
       }]\
     ]],\
     ["svelte-hmr", [\
-      ["npm:0.16.0", {\
-        "packageLocation": "../../AppData/Local/Yarn/Berry/cache/svelte-hmr-npm-0.16.0-9716494a72-10c0.zip/node_modules/svelte-hmr/",\
+      ["npm:0.15.3", {\
+        "packageLocation": "../../AppData/Local/Yarn/Berry/cache/svelte-hmr-npm-0.15.3-e69f891d87-10c0.zip/node_modules/svelte-hmr/",\
         "packageDependencies": [\
-          ["svelte-hmr", "npm:0.16.0"]\
+          ["svelte-hmr", "npm:0.15.3"]\
         ],\
         "linkType": "SOFT"\
       }],\
-      ["virtual:0e677667098a4cfe11271cb33264fc588f85c6d74ed4a8319e88d13a4731e965b4f1c35c36d13c75ea70b8a7b1c70bba2ca16296284a059f6f15f9d2feba37a8#npm:0.16.0", {\
-        "packageLocation": "./.yarn/__virtual__/svelte-hmr-virtual-88582073c8/3/AppData/Local/Yarn/Berry/cache/svelte-hmr-npm-0.16.0-9716494a72-10c0.zip/node_modules/svelte-hmr/",\
+      ["virtual:2d26458f94bce64817a525b17fc0d10e6ba28b5f0e7f73f469b761a27b24374d017244252fea589d7028bb9a0316c21a61d79817dba0594054dc4acd96728e40#npm:0.15.3", {\
+        "packageLocation": "./.yarn/__virtual__/svelte-hmr-virtual-385518192b/3/AppData/Local/Yarn/Berry/cache/svelte-hmr-npm-0.15.3-e69f891d87-10c0.zip/node_modules/svelte-hmr/",\
         "packageDependencies": [\
-          ["svelte-hmr", "virtual:0e677667098a4cfe11271cb33264fc588f85c6d74ed4a8319e88d13a4731e965b4f1c35c36d13c75ea70b8a7b1c70bba2ca16296284a059f6f15f9d2feba37a8#npm:0.16.0"],\
+          ["svelte-hmr", "virtual:2d26458f94bce64817a525b17fc0d10e6ba28b5f0e7f73f469b761a27b24374d017244252fea589d7028bb9a0316c21a61d79817dba0594054dc4acd96728e40#npm:0.15.3"],\
           ["@types/svelte", null],\
           ["svelte", "npm:4.2.19"]\
         ],\
@@ -3650,10 +3650,10 @@ const RAW_RUNTIME_STATE =
         ],\
         "linkType": "SOFT"\
       }],\
-      ["virtual:0e677667098a4cfe11271cb33264fc588f85c6d74ed4a8319e88d13a4731e965b4f1c35c36d13c75ea70b8a7b1c70bba2ca16296284a059f6f15f9d2feba37a8#npm:0.2.5", {\
-        "packageLocation": "./.yarn/__virtual__/vitefu-virtual-2f8d19a161/3/AppData/Local/Yarn/Berry/cache/vitefu-npm-0.2.5-df1798d310-10c0.zip/node_modules/vitefu/",\
+      ["virtual:2d26458f94bce64817a525b17fc0d10e6ba28b5f0e7f73f469b761a27b24374d017244252fea589d7028bb9a0316c21a61d79817dba0594054dc4acd96728e40#npm:0.2.5", {\
+        "packageLocation": "./.yarn/__virtual__/vitefu-virtual-1ec2b17d9d/3/AppData/Local/Yarn/Berry/cache/vitefu-npm-0.2.5-df1798d310-10c0.zip/node_modules/vitefu/",\
         "packageDependencies": [\
-          ["vitefu", "virtual:0e677667098a4cfe11271cb33264fc588f85c6d74ed4a8319e88d13a4731e965b4f1c35c36d13c75ea70b8a7b1c70bba2ca16296284a059f6f15f9d2feba37a8#npm:0.2.5"],\
+          ["vitefu", "virtual:2d26458f94bce64817a525b17fc0d10e6ba28b5f0e7f73f469b761a27b24374d017244252fea589d7028bb9a0316c21a61d79817dba0594054dc4acd96728e40#npm:0.2.5"],\
           ["@types/vite", null],\
           ["vite", "virtual:fdcb47caccfd3445e07507b6155aaf4e671d31c3a69659808895b9ec1f0d5fedfad52d76d73ec871d259675ce10bfbb10b403d80c9fb344439c7ab4f51e6c6cd#npm:5.4.2"]\
         ],\

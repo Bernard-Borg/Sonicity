@@ -16,6 +16,7 @@ tauri-build = { version = "1.5.4", features = [] }
 cpal = "0.15.3"
 device_query = "1.1.3"
 ffmpeg-next = "7.0.4"
+once_cell = "1.19.0"
 rodio = "0.19.0"
 serde = { version = "1.0.209", features = ["derive"] }
 serde_json = "1.0.127"
